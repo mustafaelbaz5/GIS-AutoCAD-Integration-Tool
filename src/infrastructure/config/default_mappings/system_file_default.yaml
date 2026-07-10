@@ -1,0 +1,31 @@
+# config/column_mappings/system_file_default.yaml
+# Mapping for the base (system) file, e.g. الاخوه.xlsx.
+# Verified against the real sample file: single sheet
+# "AgricultureHoldingLandsReport", two-row header at rows 9-10, data
+# starting at row 11. The base file has a fixed schema, but column
+# letters are still declared here (not hard-coded in Python) for
+# consistency with the secondary mapping and easy re-verification.
+
+name: "System File (Base)"
+description: "Mapping for الاخوه.xlsx — fixed schema, two-row header."
+
+sheet_name: "AgricultureHoldingLandsReport"
+data_starts_at_row: 11
+
+fields:
+  فدان: "A"
+  قيراط: "C"
+  سهم: "D"
+  رقم_الأرض: "E"
+  الحد_البحرى: "G"
+  الحد_الغربى: "H"
+  الحد_القبلى: "I"
+  الحد_الشرقى: "J"
+  رقم_الصفحة_بالسجل: "L"
+  رقم_الحيازة: "N"
+  اسم_الحائز: "O"
+  كود_الحوض: "Q"
+  اسم_الحوض: "S"
+  الجمعيه: "T"
+  الأداره: "U"
+  المديريه: "V"

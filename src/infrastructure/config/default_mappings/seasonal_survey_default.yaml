@@ -1,0 +1,43 @@
+# config/column_mappings/seasonal_survey_default.yaml
+# Mapping for the secondary (variable-schema) export, e.g.
+# حصر_الصيفي2026_جديد__اول.xlsx.
+#
+# Verified against the real sample file: single sheet "سجل 2 خدمات".
+# The header block is irregular — real group/sub headers live at rows
+# 3-4, rows 1-2 contain stray content, and rows 5-6 are village-level
+# subtotals (not holder rows). Real per-holder data starts at row 7.
+#
+# The "الحوض" column (AF) is type-sensitive in the real file: for most
+# rows it holds a small numeric basin *code*, but for ~850 rows it
+# holds the literal basin *name* as text instead. YamlColumnMapper
+# inspects the cell's Python type at read time and routes it to
+# basin_code or basin_name accordingly — see
+# src/infrastructure/excel/yaml_column_mapper.py.
+#
+# فدان/قيراط/سهم are read from the "جملة" (total) column group
+# (AA/AB/AC), not the "المنزرع" (cultivated) group (O/P/Q), per
+# explicit confirmation. Within that group the columns are abbreviated
+# س/ط/ف (sahm/qirat/feddan) rather than spelled out.
+
+name: "Seasonal Survey 2026"
+description: "Mapping for حصر الصيفي 2026 export format (سجل 2 خدمات sheet)"
+
+sheet_name: "سجل 2 خدمات"
+data_starts_at_row: 7
+
+join_key_column: "K" # رقم حيازه 2022
+
+exclude_when:
+  column: "M" # القاصر
+  values:
+    - "لاغى"
+    - "لاغي"
+
+fields:
+  رقم_الحيازة: "K"
+  اسم_الحائز: "N"
+  الرقم_القومي: "AD"
+  الحوض: "AF" # type-sensitive: text -> basin name, numeric -> basin code
+  فدان: "AC" # جملة group, abbreviated "ف"
+  قيراط: "AB" # جملة group, abbreviated "ط"
+  سهم: "AA" # جملة group, abbreviated "س"
