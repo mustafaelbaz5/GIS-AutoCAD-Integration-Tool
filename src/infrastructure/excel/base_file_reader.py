@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import openpyxl
-from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.utils import column_index_from_string
 
 from src.application.dto.parcel_record import ParcelRecord
 from src.application.ports.data_source_port import DataSourcePort
@@ -19,6 +19,11 @@ class BaseFileReader(DataSourcePort):
     rather than being hard-coded, even though this file's schema is
     fixed, for consistency with the secondary reader and easy
     re-verification if the export format ever shifts.
+
+    Uses `read_only=True` and sequential row iteration: this file's
+    thousands of merged cosmetic cells make openpyxl's normal (fully
+    parsed) load mode extremely slow — read-only mode avoids building
+    that in-memory model and cuts load time from ~20s to under 1s.
     """
 
     def __init__(self, path: Path, config: dict[str, Any]) -> None:
@@ -27,34 +32,34 @@ class BaseFileReader(DataSourcePort):
 
     def read(self) -> list[ParcelRecord]:
         """Read all parcel rows until the holding-ID column goes blank."""
-        workbook = openpyxl.load_workbook(self._path, data_only=True)
+        workbook = openpyxl.load_workbook(self._path, data_only=True, read_only=True)
         sheet_name = self._config.get("sheet_name")
-        worksheet: Worksheet = workbook[sheet_name] if sheet_name else workbook.active
+        worksheet = workbook[sheet_name] if sheet_name else workbook.active
 
         fields: dict[str, str] = self._config["fields"]
-        holding_id_column = fields["رقم_الحيازة"]
-        row_number = int(self._config["data_starts_at_row"])
+        column_indices = {name: column_index_from_string(col) for name, col in fields.items()}
+        holding_id_index = column_indices["رقم_الحيازة"]
+        max_col = max(column_indices.values())
+        data_start = int(self._config["data_starts_at_row"])
 
         records: list[ParcelRecord] = []
-        while True:
-            holding_id = clean_text(worksheet[f"{holding_id_column}{row_number}"].value)
+        for row in worksheet.iter_rows(min_row=data_start, max_col=max_col):
+            holding_id = clean_text(row[holding_id_index - 1].value)
             if holding_id is None:
                 break
-            records.append(self._build_record(worksheet, row_number, fields, holding_id))
-            row_number += 1
+            records.append(self._build_record(row, column_indices, holding_id))
 
         return records
 
     def _build_record(
         self,
-        worksheet: Worksheet,
-        row_number: int,
-        fields: dict[str, str],
+        row: tuple[Any, ...],
+        column_indices: dict[str, int],
         holding_id: str,
     ) -> ParcelRecord:
         def cell(field_name: str) -> Any:
-            column = fields.get(field_name)
-            return worksheet[f"{column}{row_number}"].value if column else None
+            index = column_indices.get(field_name)
+            return row[index - 1].value if index else None
 
         return ParcelRecord(
             holding_id_raw=holding_id,
