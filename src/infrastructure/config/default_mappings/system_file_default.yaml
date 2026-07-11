@@ -1,16 +1,24 @@
 # config/column_mappings/system_file_default.yaml
-# Mapping for the base (system) file, e.g. الاخوه.xlsx.
+# Mapping for the fixed-schema system file, e.g. الاخوه.xlsx.
 # Verified against the real sample file: single sheet
 # "AgricultureHoldingLandsReport", two-row header at rows 9-10, data
-# starting at row 11. The base file has a fixed schema, but column
-# letters are still declared here (not hard-coded in Python) for
-# consistency with the secondary mapping and easy re-verification.
+# starting at row 11.
+#
+# As of Iteration 3, this is just another mapping — no code path is
+# hard-coded to "the system file" anymore. It's the default assigned
+# to slot 1 in the "System + External" merge mode, but structurally
+# it's read through the exact same MappedFileReader as any other file.
 
-name: "System File (Base)"
+name: "System File (Default)"
 description: "Mapping for الاخوه.xlsx — fixed schema, two-row header."
 
 sheet_name: "AgricultureHoldingLandsReport"
 data_starts_at_row: 11
+
+# The join key column — رقم الحيازة. Extracted directly from this
+# column regardless of which semantic field name (if any) also maps
+# to it, per Iteration 3's "join key comes from the mapping" rule.
+join_key_column: "N"
 
 fields:
   فدان: "A"

@@ -15,10 +15,10 @@ class ProcessingStats:
             a UI drill-down (e.g. a "which rows?" popover).
         most_often_empty_fields: Up to 3 (Arabic field label, count)
             pairs, the fields most often left empty.
-        base_only_count: Rows with no match in the secondary source.
-        secondary_only_count: Rows that existed only in the secondary
-            source (always 0, since the merge is base-driven — kept
-            for transparency in the UI).
+        primary_only_count: Rows with no match in the supplementary source.
+        supplementary_only_count: Rows that existed only in the
+            supplementary source (always 0, since the merge is
+            primary-driven — kept for transparency in the UI).
         with_national_id: Rows with a national ID.
         without_national_id: Rows missing a national ID.
         excluded_laghi_count: Rows the exclusion rule filtered out.
@@ -36,8 +36,8 @@ class ProcessingStats:
     incomplete_rows: int
     incomplete_holding_ids: list[str]
     most_often_empty_fields: list[tuple[str, int]]
-    base_only_count: int
-    secondary_only_count: int
+    primary_only_count: int
+    supplementary_only_count: int
     with_national_id: int
     without_national_id: int
     excluded_laghi_count: int

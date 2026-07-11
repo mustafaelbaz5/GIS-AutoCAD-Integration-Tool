@@ -105,17 +105,17 @@ def test_passes_through_side_channel_counts() -> None:
 
     stats = ComputeStatsUseCase().execute(
         parcels,
-        base_only_count=7,
+        primary_only_count=7,
         excluded_laghi_count=3,
         unplaced_count=5,
         elapsed_seconds=12.345,
     )
 
-    assert stats.base_only_count == 7
+    assert stats.primary_only_count == 7
     assert stats.excluded_laghi_count == 3
     assert stats.unplaced_count == 5
     assert stats.elapsed_seconds == 12.35
-    assert stats.secondary_only_count == 0
+    assert stats.supplementary_only_count == 0
 
 
 def test_handles_empty_parcel_list() -> None:

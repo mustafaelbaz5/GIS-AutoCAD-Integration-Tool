@@ -7,15 +7,16 @@ from dataclasses import dataclass
 class ParcelRecord:
     """A single source's view of one parcel row.
 
-    Produced by `DataSourcePort.read()` implementations (base or
-    secondary file readers). Fields are optional because neither source
-    populates the full output schema on its own — the merge use case
-    combines two `ParcelRecord`s per the fill-priority rules in the
-    project brief §5.4.
+    Produced by `DataSourcePort.read()` implementations (any
+    `MappedFileReader`, regardless of which slot/role it fills).
+    Fields are optional because neither source populates the full
+    output schema on its own — the merge use case combines a primary
+    and a supplementary `ParcelRecord` per the fill-priority rules in
+    the project brief §5.4.
     """
 
     holding_id_raw: str | None
-    """رقم الحيازة (base) or رقم حيازه 2022 (secondary) — the join key."""
+    """The join key, per the source mapping's `join_key_column`."""
 
     page_number: str | None
     directorate: str | None

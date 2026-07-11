@@ -19,13 +19,12 @@ from src.application.use_cases.merge_parcels_use_case import MergeParcelsUseCase
 from src.domain.services.spatial_sorter import SpatialSorter
 from src.infrastructure.config.default_landmarks import DEFAULT_LANDMARK_KEYWORDS
 from src.infrastructure.config.yaml_mapping_loader import load_mapping
-from src.infrastructure.excel.base_file_reader import BaseFileReader
+from src.infrastructure.excel.mapped_file_reader import MappedFileReader
 from src.infrastructure.excel.professional_excel_writer import (
     ProfessionalExcelWriter,
     default_output_filename,
     resolve_unique_path,
 )
-from src.infrastructure.excel.secondary_file_reader import SecondaryFileReader
 from src.infrastructure.excel.yaml_column_mapper import YamlColumnMapper
 from src.infrastructure.logging_setup import configure_logging
 
@@ -59,16 +58,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def run_pipeline(args: argparse.Namespace) -> Path:
     """Run the read -> merge -> sort -> write pipeline and return the output path."""
-    base_config = load_mapping(args.base_mapping)
-    secondary_config = load_mapping(args.secondary_mapping)
+    primary_config = load_mapping(args.base_mapping)
+    supplementary_config = load_mapping(args.secondary_mapping)
 
-    base_reader = BaseFileReader(args.base_file, base_config)
-    secondary_mapper = YamlColumnMapper(secondary_config["fields"])
-    secondary_reader = SecondaryFileReader(args.secondary_file, secondary_mapper, secondary_config)
+    primary_mapper = YamlColumnMapper(primary_config["fields"])
+    primary_reader = MappedFileReader(args.base_file, primary_mapper, primary_config)
+    supplementary_mapper = YamlColumnMapper(supplementary_config["fields"])
+    supplementary_reader = MappedFileReader(
+        args.secondary_file, supplementary_mapper, supplementary_config
+    )
     sorter = None if args.no_sort else SpatialSorter(DEFAULT_LANDMARK_KEYWORDS)
 
     logger.info("Reading and merging sources...")
-    result = MergeParcelsUseCase(base_reader, secondary_reader, spatial_sorter=sorter).execute()
+    result = MergeParcelsUseCase(
+        primary_reader, supplementary_reader, spatial_sorter=sorter
+    ).execute()
     logger.info(f"Merged {len(result.parcels)} parcels ({len(result.warnings)} warnings).")
     for warning in result.warnings:
         logger.warning(warning)

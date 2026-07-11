@@ -11,13 +11,12 @@ from src.application.use_cases.merge_parcels_use_case import MergeParcelsUseCase
 from src.domain.services.spatial_sorter import SpatialSorter
 from src.infrastructure.config.default_landmarks import DEFAULT_LANDMARK_KEYWORDS
 from src.infrastructure.config.yaml_mapping_loader import load_mapping
-from src.infrastructure.excel.base_file_reader import BaseFileReader
+from src.infrastructure.excel.mapped_file_reader import MappedFileReader
 from src.infrastructure.excel.professional_excel_writer import (
     ProfessionalExcelWriter,
     default_output_filename,
     resolve_unique_path,
 )
-from src.infrastructure.excel.secondary_file_reader import SecondaryFileReader
 from src.infrastructure.excel.yaml_column_mapper import YamlColumnMapper
 from src.presentation.i18n.ar import (
     CANCELLED_MESSAGE,
@@ -30,8 +29,8 @@ from src.presentation.widgets.path_selector import DEFAULT_OUTPUT_DIR
 from src.shared.paths import get_app_root
 
 _DEFAULT_MAPPINGS_DIR = get_app_root() / "src" / "infrastructure" / "config" / "default_mappings"
-_DEFAULT_BASE_MAPPING = _DEFAULT_MAPPINGS_DIR / "system_file_default.yaml"
-_DEFAULT_SECONDARY_MAPPING = _DEFAULT_MAPPINGS_DIR / "seasonal_survey_default.yaml"
+_DEFAULT_SYSTEM_MAPPING = _DEFAULT_MAPPINGS_DIR / "system_file_default.yaml"
+_DEFAULT_SUPPLEMENTARY_MAPPING = _DEFAULT_MAPPINGS_DIR / "seasonal_survey_default.yaml"
 
 
 class MainViewModel(QObject):
@@ -116,21 +115,22 @@ class MainViewModel(QObject):
         self.finished.emit(True, str(output_path))
 
     def _run(self, base_file_path: Path, secondary_file_path: Path) -> Path:
-        base_config = load_mapping(_DEFAULT_BASE_MAPPING)
-        secondary_mapping_path = self.secondary_mapping_path or _DEFAULT_SECONDARY_MAPPING
-        secondary_config = load_mapping(secondary_mapping_path)
+        primary_config = load_mapping(_DEFAULT_SYSTEM_MAPPING)
+        supplementary_mapping_path = self.secondary_mapping_path or _DEFAULT_SUPPLEMENTARY_MAPPING
+        supplementary_config = load_mapping(supplementary_mapping_path)
 
-        base_reader = BaseFileReader(base_file_path, base_config)
-        secondary_mapper = YamlColumnMapper(secondary_config["fields"])
-        secondary_reader = SecondaryFileReader(
+        primary_mapper = YamlColumnMapper(primary_config["fields"])
+        primary_reader = MappedFileReader(base_file_path, primary_mapper, primary_config)
+        supplementary_mapper = YamlColumnMapper(supplementary_config["fields"])
+        supplementary_reader = MappedFileReader(
             secondary_file_path,
-            secondary_mapper,
-            secondary_config,
+            supplementary_mapper,
+            supplementary_config,
             apply_exclusion=not self.include_laghi_rows,
         )
         sorter = SpatialSorter(DEFAULT_LANDMARK_KEYWORDS) if self.enable_spatial_sort else None
 
-        result = MergeParcelsUseCase(base_reader, secondary_reader, sorter).execute(
+        result = MergeParcelsUseCase(primary_reader, supplementary_reader, sorter).execute(
             on_progress=self._emit_progress, is_cancelled=self._is_cancelled
         )
         self.log_emitted.emit(MERGE_SUCCESS_MESSAGE.format(count=len(result.parcels)), "success")
