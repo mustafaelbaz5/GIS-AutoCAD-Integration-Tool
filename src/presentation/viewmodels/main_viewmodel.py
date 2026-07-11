@@ -26,10 +26,9 @@ from src.presentation.i18n.ar import (
     NO_FILES_SELECTED_ERROR,
 )
 from src.presentation.widgets.path_selector import DEFAULT_OUTPUT_DIR
+from src.shared.paths import get_app_root
 
-_DEFAULT_MAPPINGS_DIR = (
-    Path(__file__).resolve().parents[2] / "infrastructure" / "config" / "default_mappings"
-)
+_DEFAULT_MAPPINGS_DIR = get_app_root() / "src" / "infrastructure" / "config" / "default_mappings"
 _DEFAULT_BASE_MAPPING = _DEFAULT_MAPPINGS_DIR / "system_file_default.yaml"
 _DEFAULT_SECONDARY_MAPPING = _DEFAULT_MAPPINGS_DIR / "seasonal_survey_default.yaml"
 

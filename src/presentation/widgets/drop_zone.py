@@ -57,8 +57,9 @@ class DropZone(QFrame):
             self.set_error(INVALID_FILE_TYPE)
             return
 
-        row_count = self._peek_row_count(path)
-        if row_count is None:
+        try:
+            row_count = self._peek_row_count(path)
+        except Exception:
             self.set_error(FILE_READ_ERROR)
             return
 
@@ -66,15 +67,23 @@ class DropZone(QFrame):
         self.file_selected.emit(path)
 
     def _peek_row_count(self, path: str) -> int | None:
-        try:
-            workbook = openpyxl.load_workbook(path, read_only=True)
-            sheet = workbook.active
-            return sheet.max_row if sheet is not None else None
-        except Exception:
-            return None
+        """Return the sheet's row count, or None if unavailable.
 
-    def set_selected(self, filename: str, row_count: int) -> None:
-        self._status_label.setText(f"✔ {filename} — {row_count} صف")
+        Some real-world exports omit a proper `<dimension>` tag, which
+        makes openpyxl report `max_row` as None even though the file
+        opens and reads fine — that is not a read failure, just
+        missing metadata, so callers must not treat None here as an
+        error (only a raised exception is).
+        """
+        workbook = openpyxl.load_workbook(path, read_only=True)
+        sheet = workbook.active
+        return sheet.max_row if sheet is not None else None
+
+    def set_selected(self, filename: str, row_count: int | None) -> None:
+        if row_count is None:
+            self._status_label.setText(f"✔ {filename}")
+        else:
+            self._status_label.setText(f"✔ {filename} — {row_count} صف")
 
     def set_error(self, message: str) -> None:
         self._status_label.setText(f"✖ {message}")

@@ -7,7 +7,15 @@
       "Bash(./.venv/Scripts/python.exe -m pytest tests/integration/test_main_viewmodel.py -v)",
       "Bash(./.venv/Scripts/python.exe -m ruff check src/ tests/ scripts/)",
       "Bash(./.venv/Scripts/python.exe -m pytest tests/unit tests/integration/test_professional_excel_writer.py tests/integration/test_join_key_normalization.py tests/integration/test_secondary_file_reader_exclusion_toggle.py -v)",
-      "Bash(./.venv/Scripts/python.exe -m pytest tests/unit/presentation -v)"
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/unit/presentation -v)",
+      "Bash(./.venv/Scripts/python.exe scripts/build_exe.py)",
+      "Bash(tasklist //FI \"IMAGENAME eq pyinstaller.exe\" //FI \"IMAGENAME eq python.exe\")",
+      "PowerShell(Stop-Process -Name \"GIS_AutoCAD_Tool\" -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Name \"GIS_AutoCAD_Tool\" -ErrorAction SilentlyContinue)",
+      "Bash(./dist/GIS_AutoCAD_Tool.exe)",
+      "Bash(rm -f exe_stdout.log exe_stderr.log)",
+      "Bash(./.venv/Scripts/python.exe -m PyInstaller src/main.py --name=GIS_AutoCAD_Tool_debug --onefile --noconfirm --distpath=dist_debug --workpath=build_debug --add-data=\"src/infrastructure/config/default_mappings;src/infrastructure/config/default_mappings\")",
+      "Bash(timeout 8 ./dist_debug/GIS_AutoCAD_Tool_debug.exe)"
     ]
   }
 }

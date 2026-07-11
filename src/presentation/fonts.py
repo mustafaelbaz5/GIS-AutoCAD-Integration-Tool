@@ -8,11 +8,10 @@ there (e.g. from Google Fonts) before packaging, since font files
 cannot be fetched as part of this build.
 """
 
-from pathlib import Path
-
 from PySide6.QtGui import QFontDatabase
 
-_FONTS_DIR = Path(__file__).resolve().parents[2] / "resources" / "fonts"
+from src.shared.paths import get_app_root
+
 _FALLBACK_FAMILY = "Segoe UI"
 
 
@@ -24,10 +23,11 @@ def load_app_font_family() -> str:
         loaded successfully, otherwise a system fallback family with
         reasonable Arabic glyph support.
     """
-    if not _FONTS_DIR.is_dir():
+    fonts_dir = get_app_root() / "resources" / "fonts"
+    if not fonts_dir.is_dir():
         return _FALLBACK_FAMILY
 
-    for font_path in sorted(_FONTS_DIR.glob("*.ttf")) + sorted(_FONTS_DIR.glob("*.otf")):
+    for font_path in sorted(fonts_dir.glob("*.ttf")) + sorted(fonts_dir.glob("*.otf")):
         font_id = QFontDatabase.addApplicationFont(str(font_path))
         if font_id == -1:
             continue
