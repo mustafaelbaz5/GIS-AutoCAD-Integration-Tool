@@ -1,0 +1,41 @@
+# config/column_mappings/system_file_legacy_lands_report.yaml
+# Legacy mapping for the older "AgricultureHoldingLandsReport"-style
+# system-file export, e.g. الاخوه.xlsx (parcel-level: one row per land
+# parcel, with its own borders/basin/land-number). Superseded as the
+# *default* system mapping in favor of
+# system_file_default.yaml (the newer "approved holdings" report
+# format), but kept available here for anyone still exporting the old
+# format, or for use as a Mode-B mapping choice.
+#
+# Verified against the real sample file: single sheet
+# "AgricultureHoldingLandsReport", two-row header at rows 9-10, data
+# starting at row 11.
+
+name: "System File (Legacy — Lands Report)"
+description: "Mapping for الاخوه.xlsx-style exports — fixed schema, two-row header."
+
+sheet_name: "AgricultureHoldingLandsReport"
+data_starts_at_row: 11
+
+# The join key column — رقم الحيازة. Extracted directly from this
+# column regardless of which semantic field name (if any) also maps
+# to it, per Iteration 3's "join key comes from the mapping" rule.
+join_key_column: "N"
+
+fields:
+  فدان: "A"
+  قيراط: "C"
+  سهم: "D"
+  رقم_الأرض: "E"
+  الحد_البحرى: "G"
+  الحد_الغربى: "H"
+  الحد_القبلى: "I"
+  الحد_الشرقى: "J"
+  رقم_الصفحة_بالسجل: "L"
+  رقم_الحيازة: "N"
+  اسم_الحائز: "O"
+  كود_الحوض: "Q"
+  اسم_الحوض: "S"
+  الجمعيه: "T"
+  الأداره: "U"
+  المديريه: "V"

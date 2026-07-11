@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import openpyxl
+import pytest
 from src.infrastructure.config.yaml_mapping_loader import load_mapping
 from src.infrastructure.excel.mapped_file_reader import MappedFileReader
 from src.infrastructure.excel.yaml_column_mapper import YamlColumnMapper
@@ -23,6 +24,7 @@ _MAPPINGS_DIR = (
     Path(__file__).resolve().parents[2] / "src" / "infrastructure" / "config" / "default_mappings"
 )
 SYSTEM_MAPPING_PATH = _MAPPINGS_DIR / "system_file_default.yaml"
+LEGACY_SYSTEM_MAPPING_PATH = _MAPPINGS_DIR / "system_file_legacy_lands_report.yaml"
 SEASONAL_MAPPING_PATH = _MAPPINGS_DIR / "seasonal_survey_default.yaml"
 
 SEASONAL_SHEET_NAME = "سجل 2 خدمات"
@@ -34,6 +36,12 @@ def _read_system_records(base_file_path: Path) -> list[Any]:
     config = load_mapping(SYSTEM_MAPPING_PATH)
     mapper = YamlColumnMapper(config["fields"])
     return MappedFileReader(base_file_path, mapper, config).read()
+
+
+def _read_legacy_system_records(legacy_base_file_path: Path) -> list[Any]:
+    config = load_mapping(LEGACY_SYSTEM_MAPPING_PATH)
+    mapper = YamlColumnMapper(config["fields"])
+    return MappedFileReader(legacy_base_file_path, mapper, config).read()
 
 
 def _read_seasonal_records(secondary_file_path: Path, apply_exclusion: bool = True) -> list[Any]:
@@ -59,38 +67,80 @@ def _is_excluded_row(cells: dict[str, Any]) -> bool:
     return m_value is not None and normalize_arabic(str(m_value)) in _EXCLUDED_TARGETS
 
 
-# --- System-file mapping (real file) ---------------------------------------
+# --- System-file mapping (real file, current "approved holdings" format) ---
 
 
-def test_system_mapping_reads_all_2930_data_rows(base_file_path: Path) -> None:
+def test_system_mapping_reads_all_928_data_rows(base_file_path: Path) -> None:
     records = _read_system_records(base_file_path)
+    assert len(records) == 928
+
+
+def test_system_mapping_join_key_comes_from_column_r(base_file_path: Path) -> None:
+    records = _read_system_records(base_file_path)
+    assert records[0].holding_id_raw == "221"
+    assert records[0].holder_name == "ابتسام حسن حسن البرقى"
+
+
+def test_system_mapping_national_id_is_read_directly(base_file_path: Path) -> None:
+    records = _read_system_records(base_file_path)
+    assert records[0].national_id == "26711121202206"
+    assert all(r.national_id is None or len(r.national_id) == 14 for r in records)
+
+
+def test_system_mapping_area_fields_are_read(base_file_path: Path) -> None:
+    records = _read_system_records(base_file_path)
+    first = records[0]
+    assert first.feddan == 0.0
+    assert first.qirat == 13.0
+    assert first.sahm == 0.0
+
+
+def test_system_mapping_never_fabricates_unmapped_fields(base_file_path: Path) -> None:
+    """This report has no basin/border/land-number columns at all — every
+    row must resolve those fields to None, never a guessed value."""
+    records = _read_system_records(base_file_path)
+    assert all(r.basin_name is None for r in records)
+    assert all(r.basin_code is None for r in records)
+    assert all(r.east is None for r in records)
+    assert all(r.land_number is None for r in records)
+
+
+# --- Legacy system-file mapping (real file, older parcel-level format) -----
+
+
+def test_legacy_system_mapping_reads_all_2930_data_rows(legacy_base_file_path: Path) -> None:
+    records = _read_legacy_system_records(legacy_base_file_path)
     assert len(records) == 2930
 
 
-def test_system_mapping_preserves_leading_zeros(base_file_path: Path) -> None:
-    records = _read_system_records(base_file_path)
+def test_legacy_system_mapping_preserves_leading_zeros(legacy_base_file_path: Path) -> None:
+    records = _read_legacy_system_records(legacy_base_file_path)
     assert records[0].holding_id_raw == "010"
 
 
-def test_system_mapping_known_first_row_holder_and_basin(base_file_path: Path) -> None:
-    records = _read_system_records(base_file_path)
+def test_legacy_system_mapping_known_first_row_holder_and_basin(
+    legacy_base_file_path: Path,
+) -> None:
+    records = _read_legacy_system_records(legacy_base_file_path)
     first = records[0]
     assert first.basin_name == "الشيكاره"
     assert first.holder_name == "وليد خطاب الشاذلى الشاذلى"
 
 
-def test_system_mapping_border_placeholders_are_normalized_to_none(
-    base_file_path: Path,
+def test_legacy_system_mapping_border_placeholders_are_normalized_to_none(
+    legacy_base_file_path: Path,
 ) -> None:
-    records = _read_system_records(base_file_path)
+    records = _read_legacy_system_records(legacy_base_file_path)
     assert all(r.east != "،،" for r in records)
     assert all(r.west != "،،" for r in records)
     assert all(r.south != "،،" for r in records)
     assert all(r.north != "،،" for r in records)
 
 
-def test_system_mapping_basin_code_column_is_empty(base_file_path: Path) -> None:
-    records = _read_system_records(base_file_path)
+def test_legacy_system_mapping_basin_code_column_is_empty(
+    legacy_base_file_path: Path,
+) -> None:
+    records = _read_legacy_system_records(legacy_base_file_path)
     assert all(r.basin_code is None for r in records)
 
 
@@ -208,9 +258,9 @@ def test_seasonal_mapping_borders_and_land_number_stay_none(secondary_file_path:
 _TOGGLE_CONFIG: dict[str, Any] = {
     "sheet_name": "Sheet1",
     "data_starts_at_row": 2,
-    "join_key_column": "K",
-    "exclude_when": {"column": "M", "values": ["لاغى", "لاغي"]},
-    "fields": {"اسم_الحائز": "N"},
+    "join_key_column": "A",
+    "exclude_when": {"column": "B", "values": ["لاغى", "لاغي"]},
+    "fields": {"اسم_الحائز": "C"},
 }
 
 
@@ -218,7 +268,10 @@ def _write_toggle_workbook(path: Path) -> None:
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Sheet1"
-    sheet.append(["K header", "M header", "N header"])
+    # openpyxl's append() always writes starting at column A, regardless
+    # of what the header text says — these headers land in A/B/C, which
+    # is what _TOGGLE_CONFIG's column letters must match.
+    sheet.append(["ID", "Excluded Flag", "Holder Name"])
     sheet.append(["1", "لاغى", "Excluded Holder"])
     sheet.append(["2", None, "Kept Holder"])
     workbook.save(path)
@@ -325,11 +378,95 @@ def test_row_with_blank_join_key_is_skipped_not_errored(tmp_path: Path) -> None:
 # --- Sanity: both real mapping files still load cleanly ---------------------
 
 
-def test_both_default_mappings_load_without_error() -> None:
+def test_all_default_mappings_load_without_error() -> None:
     system_config = load_mapping(SYSTEM_MAPPING_PATH)
+    legacy_system_config = load_mapping(LEGACY_SYSTEM_MAPPING_PATH)
     seasonal_config = load_mapping(SEASONAL_MAPPING_PATH)
 
     assert "join_key_column" in system_config
+    assert "join_key_column" in legacy_system_config
     assert "join_key_column" in seasonal_config
-    assert system_config["join_key_column"] == "N"
+    assert system_config["join_key_column"] == "R"
+    assert legacy_system_config["join_key_column"] == "N"
     assert seasonal_config["join_key_column"] == "K"
+
+
+# --- Sheet-name drift between exports of the same report ---------------------
+#
+# Report exports of the same underlying report type sometimes get a
+# different auto-generated sheet name per export run (observed in
+# practice with the system-file report). Since these reports are
+# always single-sheet, the reader falls back to the workbook's only
+# sheet rather than failing the whole run.
+
+
+def _write_single_sheet_workbook(path: Path, sheet_title: str) -> None:
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = sheet_title
+    sheet.append(["ID", "Name"])
+    sheet.append(["1", "Someone"])
+    workbook.save(path)
+
+
+def test_falls_back_to_the_only_sheet_when_configured_name_is_absent(tmp_path: Path) -> None:
+    path = tmp_path / "renamed_sheet.xlsx"
+    _write_single_sheet_workbook(path, sheet_title="SomeOtherAutoGeneratedName")
+
+    config: dict[str, Any] = {
+        "sheet_name": "ExpectedSheetName",
+        "data_starts_at_row": 2,
+        "join_key_column": "A",
+        "fields": {"اسم_الحائز": "B"},
+    }
+    mapper = YamlColumnMapper(config["fields"])
+    reader = MappedFileReader(path, mapper, config)
+
+    records = reader.read()
+
+    assert len(records) == 1
+    assert records[0].holder_name == "Someone"
+    assert reader.sheet_fallback_warning is not None
+    assert "ExpectedSheetName" in reader.sheet_fallback_warning
+    assert "SomeOtherAutoGeneratedName" in reader.sheet_fallback_warning
+
+
+def test_sheet_fallback_warning_is_none_when_configured_name_matches(tmp_path: Path) -> None:
+    path = tmp_path / "matching_sheet.xlsx"
+    _write_single_sheet_workbook(path, sheet_title="Sheet1")
+
+    config: dict[str, Any] = {
+        "sheet_name": "Sheet1",
+        "data_starts_at_row": 2,
+        "join_key_column": "A",
+        "fields": {"اسم_الحائز": "B"},
+    }
+    mapper = YamlColumnMapper(config["fields"])
+    reader = MappedFileReader(path, mapper, config)
+
+    reader.read()
+
+    assert reader.sheet_fallback_warning is None
+
+
+def test_raises_when_sheet_name_is_absent_and_workbook_has_multiple_sheets(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "multi_sheet.xlsx"
+    workbook = openpyxl.Workbook()
+    first_sheet = workbook.active
+    assert first_sheet is not None
+    first_sheet.title = "FirstSheet"
+    workbook.create_sheet("SecondSheet")
+    workbook.save(path)
+
+    config: dict[str, Any] = {
+        "sheet_name": "ExpectedSheetName",
+        "data_starts_at_row": 2,
+        "join_key_column": "A",
+        "fields": {"اسم_الحائز": "B"},
+    }
+    mapper = YamlColumnMapper(config["fields"])
+
+    with pytest.raises(KeyError, match="ExpectedSheetName"):
+        MappedFileReader(path, mapper, config).read()

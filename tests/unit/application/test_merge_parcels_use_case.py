@@ -83,13 +83,22 @@ def test_falls_back_to_secondary_when_base_field_missing() -> None:
     assert result.parcels[0].holder.name == "Secondary Holder"
 
 
-def test_national_id_only_ever_comes_from_secondary() -> None:
-    base = FakeDataSource([make_record(holding_id_raw="1", national_id="should-be-ignored")])
-    secondary = FakeDataSource([make_record(holding_id_raw="1", national_id="real-national-id")])
+def test_national_id_prefers_primary_when_present() -> None:
+    base = FakeDataSource([make_record(holding_id_raw="1", national_id="primary-id")])
+    secondary = FakeDataSource([make_record(holding_id_raw="1", national_id="supplementary-id")])
 
     result = MergeParcelsUseCase(base, secondary).execute()
 
-    assert result.parcels[0].holder.national_id == "real-national-id"
+    assert result.parcels[0].holder.national_id == "primary-id"
+
+
+def test_national_id_falls_back_to_supplementary_when_primary_missing() -> None:
+    base = FakeDataSource([make_record(holding_id_raw="1", national_id=None)])
+    secondary = FakeDataSource([make_record(holding_id_raw="1", national_id="supplementary-id")])
+
+    result = MergeParcelsUseCase(base, secondary).execute()
+
+    assert result.parcels[0].holder.national_id == "supplementary-id"
 
 
 def test_borders_and_land_number_are_base_only_never_secondary() -> None:
@@ -180,7 +189,7 @@ def test_reports_progress_from_zero_to_hundred() -> None:
 
     MergeParcelsUseCase(base, secondary).execute(on_progress=lambda p, m: events.append((p, m)))
 
-    assert events[0] == (0, "Reading base file...")
+    assert events[0] == (0, "Reading primary source...")
     assert events[-1][0] == 100
 
 

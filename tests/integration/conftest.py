@@ -12,7 +12,17 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-BASE_FILE_PATH = PROJECT_ROOT / "الاخوه.xlsx"
+
+# The current default system-file sample ("approved holdings" report
+# format, matches system_file_default.yaml).
+BASE_FILE_PATH = PROJECT_ROOT / "م الاخوة.xlsx"
+
+# The older parcel-level system-file sample (matches
+# system_file_legacy_lands_report.yaml). Kept as a separate fixture so
+# legacy-mapping tests degrade to a clean skip if this file isn't
+# present, without affecting the current-mapping tests.
+LEGACY_BASE_FILE_PATH = PROJECT_ROOT / "الاخوه.xlsx"
+
 SECONDARY_FILE_PATH = PROJECT_ROOT / "حصر الصيفي2026 جديد  اول.xlsx"
 
 
@@ -25,6 +35,12 @@ def _skip_if_missing(path: Path) -> None:
 def base_file_path() -> Path:
     _skip_if_missing(BASE_FILE_PATH)
     return BASE_FILE_PATH
+
+
+@pytest.fixture
+def legacy_base_file_path() -> Path:
+    _skip_if_missing(LEGACY_BASE_FILE_PATH)
+    return LEGACY_BASE_FILE_PATH
 
 
 @pytest.fixture

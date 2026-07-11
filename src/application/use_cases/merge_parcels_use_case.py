@@ -23,13 +23,16 @@ class MergeParcelsUseCase:
 
     Follows the fill-priority rules of project brief §5.4, generalized
     per Iteration 3 §3: the primary source dictates the row set (its
-    holding IDs are authoritative), each field prefers the primary
-    value and falls back to the supplementary value, except national ID
-    (supplementary-only) and the four borders plus land number
-    (primary-only). No field is ever fabricated. Which source is
-    primary vs. supplementary is decided entirely by the caller — this
-    use case has no notion of "the system file" or any other special
-    source.
+    holding IDs are authoritative), and every field prefers the primary
+    value and falls back to the supplementary value — except the four
+    borders plus land number, which are primary-only (never fall back).
+    National ID follows the same primary-preferred rule as other
+    fields: mappings that never declare a national-ID column (the
+    common case) simply always fall back to the supplementary value, so
+    this generalization is backward-compatible. No field is ever
+    fabricated. Which source is primary vs. supplementary is decided
+    entirely by the caller — this use case has no notion of "the system
+    file" or any other special source.
     """
 
     def __init__(
@@ -82,6 +85,12 @@ class MergeParcelsUseCase:
 
         parcels: list[Parcel] = []
         warnings: list[str] = []
+        for warning in (
+            self._primary_source.sheet_fallback_warning,
+            self._supplementary_source.sheet_fallback_warning,
+        ):
+            if warning is not None:
+                warnings.append(warning)
         primary_only_count = 0
         total = len(primary_records)
         progress_step = max(1, total // 20)
@@ -162,7 +171,7 @@ class MergeParcelsUseCase:
             ),
             holder=Holder(
                 name=_first_text(primary.holder_name, supplementary_holder_name),
-                national_id=supplementary_national_id,
+                national_id=_first_text(primary.national_id, supplementary_national_id),
             ),
             borders=Borders(
                 east=primary.east,

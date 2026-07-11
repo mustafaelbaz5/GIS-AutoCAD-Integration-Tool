@@ -47,6 +47,7 @@ class MappedFileReader(DataSourcePort):
         self._config = config
         self._apply_exclusion = apply_exclusion
         self._excluded_count = 0
+        self._sheet_fallback_warning: str | None = None
 
     @property
     def excluded_count(self) -> int:
@@ -57,11 +58,15 @@ class MappedFileReader(DataSourcePort):
         """
         return self._excluded_count
 
+    @property
+    def sheet_fallback_warning(self) -> str | None:
+        """See `DataSourcePort.sheet_fallback_warning`."""
+        return self._sheet_fallback_warning
+
     def read(self) -> list[ParcelRecord]:
         """Read, exclude, and map all data rows to `ParcelRecord`s."""
         workbook = openpyxl.load_workbook(self._path, data_only=True, read_only=True)
-        sheet_name = self._config.get("sheet_name")
-        worksheet = workbook[sheet_name] if sheet_name else workbook.active
+        worksheet = self._resolve_worksheet(workbook)
 
         data_start = int(self._config["data_starts_at_row"])
         join_key_column: str = self._config["join_key_column"]
@@ -90,6 +95,33 @@ class MappedFileReader(DataSourcePort):
             records.append(replace(record, holding_id_raw=holding_id))
 
         return records
+
+    def _resolve_worksheet(self, workbook: Any) -> Any:
+        self._sheet_fallback_warning = None
+        sheet_name = self._config.get("sheet_name")
+        if not sheet_name:
+            return workbook.active
+
+        if sheet_name in workbook.sheetnames:
+            return workbook[sheet_name]
+
+        # Report exports of the same file type sometimes get a slightly
+        # different auto-generated sheet name per export run. If this
+        # workbook has exactly one sheet, it's unambiguous which one was
+        # meant, so fall back to it rather than fail the whole run.
+        if len(workbook.sheetnames) == 1:
+            actual_name = workbook.sheetnames[0]
+            self._sheet_fallback_warning = (
+                f"Expected sheet '{sheet_name}' not found in '{self._path.name}'; "
+                f"used its only sheet '{actual_name}' instead."
+            )
+            return workbook[actual_name]
+
+        raise KeyError(
+            f"Worksheet '{sheet_name}' not found in '{self._path.name}', and the "
+            f"workbook has multiple sheets ({workbook.sheetnames}), so the correct "
+            f"one can't be inferred."
+        )
 
     def _is_excluded(self, raw_row: dict[str, Any], exclude_config: dict[str, Any] | None) -> bool:
         if not exclude_config:

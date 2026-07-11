@@ -27,3 +27,14 @@ class DataSourcePort(ABC):
         override this to report how many rows `read()` last dropped.
         """
         return 0
+
+    @property
+    def sheet_fallback_warning(self) -> str | None:
+        """Set when `read()` had to fall back to a different sheet than configured.
+
+        None by default. Sources that can hit this (e.g. an Excel reader
+        whose configured sheet name isn't present in the workbook)
+        override this to report what happened, so the caller can surface
+        it to the user instead of silently reading from an unexpected sheet.
+        """
+        return None
