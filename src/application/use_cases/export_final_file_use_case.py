@@ -3,8 +3,9 @@
 from collections.abc import Sequence
 from pathlib import Path
 
+from src.application.exceptions import PipelineCancelledError
 from src.application.ports.data_sink_port import DataSinkPort
-from src.application.progress import ProgressCallback
+from src.application.progress import IsCancelledCallback, ProgressCallback
 from src.domain.entities.parcel import Parcel
 
 
@@ -19,8 +20,16 @@ class ExportFinalFileUseCase:
         parcels: Sequence[Parcel],
         output_path: Path,
         on_progress: ProgressCallback | None = None,
+        is_cancelled: IsCancelledCallback | None = None,
     ) -> None:
-        """Write `parcels` to `output_path` through the injected sink."""
+        """Write `parcels` to `output_path` through the injected sink.
+
+        Raises:
+            PipelineCancelledError: If `is_cancelled` reports cancellation
+                before writing starts.
+        """
+        if is_cancelled is not None and is_cancelled():
+            raise PipelineCancelledError
         if on_progress is not None:
             on_progress(0, "Writing output file...")
         self._sink.write(parcels, output_path)

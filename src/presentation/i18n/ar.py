@@ -22,4 +22,19 @@ CHOOSE_FOLDER_TITLE = "اختر مجلد الحفظ"
 
 # Processing
 START_BUTTON = "▶  بدء المعالجة"
+CANCEL_BUTTON = "إلغاء"
 LOG_PANEL_TITLE = "📋 سجل العمليات"
+
+# Errors and status (user-facing, must stay Arabic per §2.4)
+NO_FILES_SELECTED_ERROR = "الرجاء اختيار الملفين المطلوبين أولاً"
+GENERIC_PROCESSING_ERROR = "حدث خطأ غير متوقع أثناء المعالجة. راجع سجل العمليات لمزيد من التفاصيل."
+CANCELLED_MESSAGE = "تم إلغاء العملية"
+MERGE_SUCCESS_MESSAGE = "تم دمج {count} حيازة"
+FILE_SAVED_MESSAGE = "تم حفظ الملف: {path}"
+
+# Success dialog
+SUCCESS_DIALOG_TITLE = "تمت المعالجة بنجاح"
+SUCCESS_DIALOG_MESSAGE = "تم إنشاء الملف بنجاح."
+OPEN_FOLDER_BUTTON = "فتح المجلد"
+OPEN_FILE_BUTTON = "فتح الملف"
+CLOSE_BUTTON = "إغلاق"

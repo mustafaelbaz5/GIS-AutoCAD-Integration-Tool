@@ -3,6 +3,8 @@
 from collections.abc import Sequence
 from pathlib import Path
 
+import pytest
+from src.application.exceptions import PipelineCancelledError
 from src.application.ports.data_sink_port import DataSinkPort
 from src.application.use_cases.export_final_file_use_case import ExportFinalFileUseCase
 from src.domain.entities.basin import Basin
@@ -66,3 +68,14 @@ def test_reports_progress_start_and_end() -> None:
 
     assert events[0][0] == 0
     assert events[-1][0] == 100
+
+
+def test_raises_cancelled_error_before_writing_when_cancelled() -> None:
+    sink = FakeDataSink()
+
+    with pytest.raises(PipelineCancelledError):
+        ExportFinalFileUseCase(sink).execute(
+            [make_parcel("1")], Path("/tmp/output.xlsx"), is_cancelled=lambda: True
+        )
+
+    assert sink.written_parcels is None

@@ -8,3 +8,4 @@ whatever UI signal mechanism it uses.
 from collections.abc import Callable
 
 ProgressCallback = Callable[[int, str], None]
+IsCancelledCallback = Callable[[], bool]

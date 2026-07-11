@@ -4,8 +4,9 @@ from collections.abc import Sequence
 
 from src.application.dto.merge_result import MergeResult
 from src.application.dto.parcel_record import ParcelRecord
+from src.application.exceptions import PipelineCancelledError
 from src.application.ports.data_source_port import DataSourcePort
-from src.application.progress import ProgressCallback
+from src.application.progress import IsCancelledCallback, ProgressCallback
 from src.domain.entities.basin import Basin
 from src.domain.entities.borders import Borders
 from src.domain.entities.holder import Holder
@@ -35,25 +36,42 @@ class MergeParcelsUseCase:
         self._secondary_source = secondary_source
         self._spatial_sorter = spatial_sorter
 
-    def execute(self, on_progress: ProgressCallback | None = None) -> MergeResult:
+    def execute(
+        self,
+        on_progress: ProgressCallback | None = None,
+        is_cancelled: IsCancelledCallback | None = None,
+    ) -> MergeResult:
         """Run the merge (and optional spatial sort) and return the result.
 
         Args:
             on_progress: Optional callback invoked with (percent, message)
                 as the merge advances, for a UI progress bar to bind to.
+            is_cancelled: Optional callback polled periodically; when it
+                returns True, raises `PipelineCancelledError` so the
+                caller can unwind cleanly instead of blocking a Cancel
+                request until the whole merge finishes.
+
+        Raises:
+            PipelineCancelledError: If `is_cancelled` reports cancellation.
         """
 
         def report(percent: int, message: str) -> None:
             if on_progress is not None:
                 on_progress(percent, message)
 
+        def check_cancelled() -> None:
+            if is_cancelled is not None and is_cancelled():
+                raise PipelineCancelledError
+
         report(0, "Reading base file...")
         base_records = self._base_source.read()
         report(20, f"Read {len(base_records)} base records")
+        check_cancelled()
 
         report(25, "Reading secondary file...")
         secondary_by_key = self._index_by_join_key(self._secondary_source.read())
         report(45, "Merging records...")
+        check_cancelled()
 
         parcels: list[Parcel] = []
         warnings: list[str] = []
@@ -69,8 +87,10 @@ class MergeParcelsUseCase:
             parcels.append(parcel)
             if index % progress_step == 0:
                 report(45 + int(40 * index / total), f"Merging record {index}/{total}")
+                check_cancelled()
 
         if self._spatial_sorter is not None:
+            check_cancelled()
             report(90, "Sorting parcels spatially...")
             sort_result = self._spatial_sorter.sort(parcels)
             parcels = sort_result.parcels

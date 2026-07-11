@@ -1,6 +1,8 @@
 """Tests for MergeParcelsUseCase, using fake ports (no real Excel I/O)."""
 
+import pytest
 from src.application.dto.parcel_record import ParcelRecord
+from src.application.exceptions import PipelineCancelledError
 from src.application.ports.data_source_port import DataSourcePort
 from src.application.use_cases.merge_parcels_use_case import MergeParcelsUseCase
 from src.domain.services.spatial_sorter import SpatialSorter
@@ -180,3 +182,20 @@ def test_reports_progress_from_zero_to_hundred() -> None:
 
     assert events[0] == (0, "Reading base file...")
     assert events[-1][0] == 100
+
+
+def test_raises_cancelled_error_when_cancellation_requested_immediately() -> None:
+    base = FakeDataSource([make_record(holding_id_raw="1")])
+    secondary = FakeDataSource([])
+
+    with pytest.raises(PipelineCancelledError):
+        MergeParcelsUseCase(base, secondary).execute(is_cancelled=lambda: True)
+
+
+def test_does_not_raise_when_never_cancelled() -> None:
+    base = FakeDataSource([make_record(holding_id_raw="1")])
+    secondary = FakeDataSource([])
+
+    result = MergeParcelsUseCase(base, secondary).execute(is_cancelled=lambda: False)
+
+    assert len(result.parcels) == 1
