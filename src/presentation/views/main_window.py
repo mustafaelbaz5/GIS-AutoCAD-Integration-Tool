@@ -14,15 +14,17 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.application.dto.processing_stats import ProcessingStats
 from src.presentation.i18n.ar import (
     APP_TITLE,
     BASE_FILE_TITLE,
     CANCEL_BUTTON,
     CLOSE_BUTTON,
-    LOG_PANEL_TITLE,
+    HIDE_LOG_TOGGLE,
     OPEN_FILE_BUTTON,
     OPEN_FOLDER_BUTTON,
     SECONDARY_FILE_TITLE,
+    SHOW_LOG_TOGGLE,
     START_BUTTON,
     SUCCESS_DIALOG_MESSAGE,
     SUCCESS_DIALOG_TITLE,
@@ -33,6 +35,7 @@ from src.presentation.widgets.drop_zone import DropZone
 from src.presentation.widgets.log_console import LogConsole, LogLevel
 from src.presentation.widgets.path_selector import PathSelector
 from src.presentation.widgets.progress_panel import ProgressPanel
+from src.presentation.widgets.stats_panel import StatsPanel
 from src.presentation.workers.pipeline_worker import PipelineWorker
 
 
@@ -93,8 +96,17 @@ class MainWindow(QMainWindow):
         self._progress_panel = ProgressPanel()
         layout.addWidget(self._progress_panel)
 
-        layout.addWidget(QLabel(LOG_PANEL_TITLE))
+        self._stats_panel = StatsPanel()
+        self._stats_panel.setVisible(False)
+        layout.addWidget(self._stats_panel)
+
+        self._log_toggle_button = QPushButton(SHOW_LOG_TOGGLE)
+        self._log_toggle_button.setCheckable(True)
+        self._log_toggle_button.toggled.connect(self._on_log_toggled)
+        layout.addWidget(self._log_toggle_button)
+
         self._log_console = LogConsole()
+        self._log_console.setVisible(False)
         layout.addWidget(self._log_console, stretch=1)
 
         return central
@@ -107,6 +119,7 @@ class MainWindow(QMainWindow):
 
         self._viewmodel.progress_changed.connect(self._progress_panel.set_progress)
         self._viewmodel.log_emitted.connect(self._on_log_emitted)
+        self._viewmodel.stats_ready.connect(self._on_stats_ready)
 
     def _on_advanced_settings_changed(self, settings: AdvancedSettings) -> None:
         self._viewmodel.secondary_mapping_path = (
@@ -118,6 +131,7 @@ class MainWindow(QMainWindow):
     def _on_start_clicked(self) -> None:
         self._log_console.clear_log()
         self._progress_panel.reset()
+        self._stats_panel.setVisible(False)
         self._start_button.setEnabled(False)
         self._cancel_button.setEnabled(True)
         self._viewmodel.reset_cancel_flag()
@@ -135,6 +149,14 @@ class MainWindow(QMainWindow):
 
     def _on_log_emitted(self, message: str, level: str) -> None:
         self._log_console.log(message, LogLevel(level))
+
+    def _on_log_toggled(self, checked: bool) -> None:
+        self._log_console.setVisible(checked)
+        self._log_toggle_button.setText(HIDE_LOG_TOGGLE if checked else SHOW_LOG_TOGGLE)
+
+    def _on_stats_ready(self, stats: ProcessingStats) -> None:
+        self._stats_panel.display(stats)
+        self._stats_panel.setVisible(True)
 
     def _on_pipeline_finished(self, success: bool, output_path: str) -> None:
         self._viewmodel.finished.disconnect(self._on_pipeline_finished)

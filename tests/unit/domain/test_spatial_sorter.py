@@ -54,6 +54,15 @@ def test_never_drops_a_parcel_even_when_unplaceable() -> None:
 
     assert len(result.parcels) == 2
     assert {str(p.holding_id) for p in result.parcels} == {"1", "2"}
+    assert result.unplaced_count == 1
+
+
+def test_unplaced_count_is_zero_when_everything_placed() -> None:
+    p1 = make_parcel("1", "H1", east="مصرف صرف", west="مصرف")
+
+    result = SpatialSorter(LANDMARKS).sort([p1])
+
+    assert result.unplaced_count == 0
 
 
 def test_missing_starting_landmark_falls_back_to_arbitrary_start_with_warning() -> None:

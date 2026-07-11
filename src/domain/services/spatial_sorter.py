@@ -12,10 +12,21 @@ DEFAULT_MATCH_THRESHOLD = 85.0
 
 @dataclass(frozen=True)
 class SpatialSortResult:
-    """Outcome of spatial sorting: ordered parcels plus any warnings."""
+    """Outcome of spatial sorting: ordered parcels plus any warnings.
+
+    Args:
+        parcels: The ordered parcels.
+        warnings: Human-readable warnings raised while chaining parcels.
+        unplaced_count: How many parcels could not be placed in a
+            horizontal/vertical chain and were appended at the end of
+            their basin block instead — a structured count for
+            reporting (e.g. a statistics panel), distinct from the
+            free-text `warnings`.
+    """
 
     parcels: list[Parcel]
     warnings: list[str]
+    unplaced_count: int = 0
 
 
 class SpatialSorter:
@@ -47,13 +58,15 @@ class SpatialSorter:
         """
         warnings: list[str] = []
         ordered: list[Parcel] = []
+        unplaced_count = 0
 
         for basin_name, basin_parcels in self._group_by_basin(parcels).items():
             basin_result = self._sort_basin(basin_parcels, basin_name)
             ordered.extend(basin_result.parcels)
             warnings.extend(basin_result.warnings)
+            unplaced_count += basin_result.unplaced_count
 
-        return SpatialSortResult(parcels=ordered, warnings=warnings)
+        return SpatialSortResult(parcels=ordered, warnings=warnings, unplaced_count=unplaced_count)
 
     def _group_by_basin(self, parcels: Sequence[Parcel]) -> dict[str, list[Parcel]]:
         groups: dict[str, list[Parcel]] = {}
@@ -92,7 +105,7 @@ class SpatialSorter:
             )
             ordered.extend(remaining)
 
-        return SpatialSortResult(parcels=ordered, warnings=warnings)
+        return SpatialSortResult(parcels=ordered, warnings=warnings, unplaced_count=len(remaining))
 
     def _find_starting_parcel(self, parcels: list[Parcel]) -> Parcel | None:
         for parcel in parcels:

@@ -11,6 +11,7 @@ class Palette:
     surface: str
     primary_accent: str
     success_accent: str
+    warning_accent: str
     text_primary: str
     text_secondary: str
 
@@ -20,6 +21,7 @@ DARK_PALETTE = Palette(
     surface="#1e293b",
     primary_accent="#3b82f6",
     success_accent="#22c55e",
+    warning_accent="#f59e0b",
     text_primary="#f1f5f9",
     text_secondary="#94a3b8",
 )
@@ -59,6 +61,26 @@ def build_stylesheet(palette: Palette) -> str:
     QFrame[card="true"] {{
         background-color: {palette.surface};
         border-radius: 12px;
+    }}
+    QLabel[statValue="true"] {{
+        font-size: 22px;
+        font-weight: bold;
+        color: {palette.text_primary};
+    }}
+    QFrame[statVariant="warning"] QLabel[statValue="true"] {{
+        color: {palette.warning_accent};
+    }}
+    QFrame[statVariant="success"] QLabel[statValue="true"] {{
+        color: {palette.success_accent};
+    }}
+    QPushButton[iconButton="true"] {{
+        background-color: transparent;
+        padding: 2px;
+        border-radius: 4px;
+        color: {palette.text_secondary};
+    }}
+    QPushButton[iconButton="true"]:hover {{
+        background-color: {palette.background};
     }}
     QProgressBar {{
         background-color: {palette.surface};

@@ -7,6 +7,7 @@ LIGHT_PALETTE = Palette(
     surface="#ffffff",
     primary_accent="#3b82f6",
     success_accent="#22c55e",
+    warning_accent="#d97706",
     text_primary="#0f172a",
     text_secondary="#475569",
 )

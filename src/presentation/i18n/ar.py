@@ -47,3 +47,27 @@ INCLUDE_LAGHI_LABEL = "تضمين الصفوف الملغاة (لاغى)"
 ENABLE_SPATIAL_SORT_LABEL = "تفعيل الترتيب المكاني"
 SAVE_PRESET_BUTTON = "حفظ الإعدادات"
 LOAD_PRESET_BUTTON = "تحميل الإعدادات"
+
+# Log panel toggle (Iteration 2 §4)
+SHOW_LOG_TOGGLE = "📋 عرض سجل العمليات ▾"
+HIDE_LOG_TOGGLE = "📋 إخفاء سجل العمليات ▴"
+
+# Statistics panel (Iteration 2 §4)
+STATS_PANEL_TITLE = "📊 ملخص النتائج"
+STAT_TOTAL_MERGED = "إجمالي الحيازات المدمجة"
+STAT_COMPLETE_ROWS = "بيانات كاملة"
+STAT_INCOMPLETE_ROWS = "بيانات ناقصة"
+STAT_BASE_ONLY = "فقط من ملف المنظومة"
+STAT_SECONDARY_ONLY = "فقط من الملف الخارجي"
+STAT_WITH_NATIONAL_ID = "مع رقم قومي"
+STAT_WITHOUT_NATIONAL_ID = "بدون رقم قومي"
+STAT_EXCLUDED_LAGHI = 'صفوف "لاغى" مستبعدة'
+STAT_TOTAL_FEDDAN = "إجمالي المساحة (فدان)"
+STAT_TOTAL_SQM = "إجمالي المساحة (م²)"
+STAT_DISTINCT_BASINS = "عدد الأحواض"
+STAT_TOP_BASINS = "أكبر 3 أحواض"
+STAT_UNPLACED = "قطع لم يُحدَّد ترتيبها المكاني"
+STAT_ELAPSED_TIME = "زمن المعالجة"
+STAT_ELAPSED_TIME_UNIT = "{seconds} ث"
+COPY_VALUE_TOOLTIP = "نسخ القيمة"
+INCOMPLETE_ROWS_POPOVER_TITLE = "الحيازات ذات البيانات الناقصة"

@@ -46,6 +46,7 @@ class MainViewModel(QObject):
     progress_changed = Signal(int, str)
     log_emitted = Signal(str, str)  # message, level: "success" | "warning" | "error"
     finished = Signal(bool, str)  # success, output path (or empty on failure/cancel)
+    stats_ready = Signal(object)  # ProcessingStats, emitted just before `finished(True, ...)`
 
     def __init__(self) -> None:
         super().__init__()
@@ -134,6 +135,7 @@ class MainViewModel(QObject):
         self.log_emitted.emit(MERGE_SUCCESS_MESSAGE.format(count=len(result.parcels)), "success")
         for warning in result.warnings:
             self.log_emitted.emit(warning, "warning")
+        self.stats_ready.emit(result.stats)
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         output_path = self.output_dir / default_output_filename()

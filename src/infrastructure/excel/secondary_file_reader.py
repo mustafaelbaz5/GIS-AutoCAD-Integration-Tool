@@ -36,6 +36,16 @@ class SecondaryFileReader(DataSourcePort):
         self._mapper = mapper
         self._config = config
         self._apply_exclusion = apply_exclusion
+        self._excluded_count = 0
+
+    @property
+    def excluded_count(self) -> int:
+        """How many rows the last `read()` call filtered out via the exclusion rule.
+
+        Zero before `read()` has been called, and while `apply_exclusion`
+        is False (nothing is excluded in that mode).
+        """
+        return self._excluded_count
 
     def read(self) -> list[ParcelRecord]:
         """Read, exclude, and map all data rows to `ParcelRecord`s."""
@@ -53,10 +63,12 @@ class SecondaryFileReader(DataSourcePort):
         column_indices = {col: column_index_from_string(col) for col in needed_columns}
         max_col = max(column_indices.values())
 
+        self._excluded_count = 0
         records: list[ParcelRecord] = []
         for row in worksheet.iter_rows(min_row=data_start, max_col=max_col):
             raw_row = {col: row[index - 1].value for col, index in column_indices.items()}
             if self._is_excluded(raw_row, exclude_config):
+                self._excluded_count += 1
                 continue
             record = self._mapper.map(raw_row)
             if record.holding_id_raw is None:

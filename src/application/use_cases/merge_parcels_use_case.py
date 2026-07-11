@@ -1,5 +1,6 @@
 """Use case: merge base and secondary sources into final parcels."""
 
+import time
 from collections.abc import Sequence
 
 from src.application.dto.merge_result import MergeResult
@@ -7,6 +8,7 @@ from src.application.dto.parcel_record import ParcelRecord
 from src.application.exceptions import PipelineCancelledError
 from src.application.ports.data_source_port import DataSourcePort
 from src.application.progress import IsCancelledCallback, ProgressCallback
+from src.application.use_cases.compute_stats_use_case import ComputeStatsUseCase
 from src.domain.entities.basin import Basin
 from src.domain.entities.borders import Borders
 from src.domain.entities.holder import Holder
@@ -63,6 +65,7 @@ class MergeParcelsUseCase:
             if is_cancelled is not None and is_cancelled():
                 raise PipelineCancelledError
 
+        start_time = time.time()
         report(0, "Reading base file...")
         base_records = self._base_source.read()
         report(20, f"Read {len(base_records)} base records")
@@ -75,11 +78,14 @@ class MergeParcelsUseCase:
 
         parcels: list[Parcel] = []
         warnings: list[str] = []
+        base_only_count = 0
         total = len(base_records)
         progress_step = max(1, total // 20)
 
         for index, base_record in enumerate(base_records, start=1):
             secondary_record = self._find_match(base_record, secondary_by_key)
+            if secondary_record is None:
+                base_only_count += 1
             parcel = self._build_parcel(base_record, secondary_record)
             if parcel is None:
                 warnings.append("Skipped a base row with no holding ID (رقم الحيازة).")
@@ -89,15 +95,25 @@ class MergeParcelsUseCase:
                 report(45 + int(40 * index / total), f"Merging record {index}/{total}")
                 check_cancelled()
 
+        unplaced_count = 0
         if self._spatial_sorter is not None:
             check_cancelled()
             report(90, "Sorting parcels spatially...")
             sort_result = self._spatial_sorter.sort(parcels)
             parcels = sort_result.parcels
             warnings.extend(sort_result.warnings)
+            unplaced_count = sort_result.unplaced_count
+
+        stats = ComputeStatsUseCase().execute(
+            parcels=parcels,
+            base_only_count=base_only_count,
+            excluded_laghi_count=self._secondary_source.excluded_count,
+            unplaced_count=unplaced_count,
+            elapsed_seconds=time.time() - start_time,
+        )
 
         report(100, "Merge complete")
-        return MergeResult(parcels=parcels, warnings=warnings)
+        return MergeResult(parcels=parcels, warnings=warnings, stats=stats)
 
     def _index_by_join_key(self, records: Sequence[ParcelRecord]) -> dict[str, ParcelRecord]:
         index: dict[str, ParcelRecord] = {}

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from src.application.dto.processing_stats import ProcessingStats
 from src.domain.entities.parcel import Parcel
 
 
@@ -14,7 +15,9 @@ class MergeResult:
         warnings: Human-readable warnings accumulated during merge and
             sorting (e.g. unmatched neighbors, rows skipped for lacking
             a holding ID). Never used to drop data silently.
+        stats: Aggregate statistics for a UI statistics panel.
     """
 
     parcels: list[Parcel]
     warnings: list[str]
+    stats: ProcessingStats
