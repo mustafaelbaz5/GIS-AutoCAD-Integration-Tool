@@ -5,6 +5,7 @@ from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QPushButton, QWidget
 
+from src.infrastructure.config.app_settings import load_last_output_dir, save_last_output_dir
 from src.presentation.i18n.ar import CHANGE_BUTTON, CHOOSE_FOLDER_TITLE, OUTPUT_LABEL
 
 DEFAULT_OUTPUT_DIR = Path.home() / "Desktop" / "GIS_Output"
@@ -13,15 +14,16 @@ DEFAULT_OUTPUT_DIR = Path.home() / "Desktop" / "GIS_Output"
 class PathSelector(QWidget):
     """Shows the current output folder and lets the user change it.
 
-    Defaults to `~/Desktop/GIS_Output/`, auto-created if missing, per
-    project brief §7.3.
+    Defaults to `~/Desktop/GIS_Output/` on first run, auto-created if
+    missing, per project brief §7.3. On later runs, defaults to the
+    last-used folder instead — persisted per Iteration 2 §8.3.
     """
 
     path_changed = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._path = DEFAULT_OUTPUT_DIR
+        self._path = load_last_output_dir() or DEFAULT_OUTPUT_DIR
         self._path.mkdir(parents=True, exist_ok=True)
 
         self._path_label = QLabel(str(self._path))
@@ -45,4 +47,5 @@ class PathSelector(QWidget):
         self._path = Path(chosen)
         self._path.mkdir(parents=True, exist_ok=True)
         self._path_label.setText(str(self._path))
+        save_last_output_dir(self._path)
         self.path_changed.emit(str(self._path))

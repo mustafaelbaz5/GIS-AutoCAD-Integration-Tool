@@ -41,3 +41,14 @@ def best_match(
 def similarity(a: str, b: str) -> float:
     """Return the similarity ratio (0-100) between two strings."""
     return fuzz.ratio(a, b)
+
+
+def weighted_similarity(a: str, b: str) -> float:
+    """Return the RapidFuzz WRatio similarity (0-100) between two strings.
+
+    Unlike `similarity` (plain ratio), WRatio combines several matching
+    strategies and tolerates partial or reordered tokens better — used
+    for holder-name search, where a user may type only part of a name
+    or type the parts in a different order.
+    """
+    return fuzz.WRatio(a, b)

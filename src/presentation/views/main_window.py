@@ -23,6 +23,9 @@ from src.presentation.i18n.ar import (
     HIDE_LOG_TOGGLE,
     OPEN_FILE_BUTTON,
     OPEN_FOLDER_BUTTON,
+    SEARCH_BUTTON,
+    SEARCH_MENU_ITEM,
+    SEARCH_MENU_TOOLS,
     SECONDARY_FILE_TITLE,
     SHOW_LOG_TOGGLE,
     START_BUTTON,
@@ -30,6 +33,7 @@ from src.presentation.i18n.ar import (
     SUCCESS_DIALOG_TITLE,
 )
 from src.presentation.viewmodels.main_viewmodel import MainViewModel
+from src.presentation.views.search_window import SearchWindow
 from src.presentation.widgets.advanced_settings_panel import AdvancedSettings, AdvancedSettingsPanel
 from src.presentation.widgets.drop_zone import DropZone
 from src.presentation.widgets.log_console import LogConsole, LogLevel
@@ -54,11 +58,14 @@ class MainWindow(QMainWindow):
         self._viewmodel = MainViewModel()
         self._thread: QThread | None = None
         self._worker: PipelineWorker | None = None
+        self._last_output_path: Path | None = None
+        self._search_window: SearchWindow | None = None
 
         self.setWindowTitle(APP_TITLE)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.resize(900, 700)
         self.setCentralWidget(self._build_central_widget())
+        self._build_menu_bar()
         self._connect_viewmodel()
 
     def _build_central_widget(self) -> QWidget:
@@ -100,6 +107,12 @@ class MainWindow(QMainWindow):
         self._stats_panel.setVisible(False)
         layout.addWidget(self._stats_panel)
 
+        self._search_button = QPushButton(SEARCH_BUTTON)
+        self._search_button.setProperty("success", True)
+        self._search_button.setVisible(False)
+        self._search_button.clicked.connect(self._on_search_clicked)
+        layout.addWidget(self._search_button)
+
         self._log_toggle_button = QPushButton(SHOW_LOG_TOGGLE)
         self._log_toggle_button.setCheckable(True)
         self._log_toggle_button.toggled.connect(self._on_log_toggled)
@@ -110,6 +123,11 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._log_console, stretch=1)
 
         return central
+
+    def _build_menu_bar(self) -> None:
+        tools_menu = self.menuBar().addMenu(SEARCH_MENU_TOOLS)
+        search_action = tools_menu.addAction(SEARCH_MENU_ITEM)
+        search_action.triggered.connect(self._on_search_clicked)
 
     def _connect_viewmodel(self) -> None:
         self._base_drop_zone.file_selected.connect(self._viewmodel.set_base_file)
@@ -166,7 +184,13 @@ class MainWindow(QMainWindow):
         self._cancel_button.setEnabled(False)
 
         if success:
+            self._last_output_path = Path(output_path)
+            self._search_button.setVisible(True)
             self._show_success_dialog(output_path)
+
+    def _on_search_clicked(self) -> None:
+        self._search_window = SearchWindow(self._last_output_path)
+        self._search_window.show()
 
     def _teardown_thread(self) -> None:
         if self._thread is None:

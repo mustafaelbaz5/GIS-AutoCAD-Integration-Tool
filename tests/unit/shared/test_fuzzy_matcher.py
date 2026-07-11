@@ -1,6 +1,6 @@
 """Tests for the fuzzy_matcher wrapper around rapidfuzz."""
 
-from src.shared.fuzzy_matcher import best_match, similarity
+from src.shared.fuzzy_matcher import best_match, similarity, weighted_similarity
 
 
 def test_best_match_returns_exact_match() -> None:
@@ -27,3 +27,12 @@ def test_best_match_returns_none_for_empty_query() -> None:
 
 def test_similarity_identical_strings_is_100() -> None:
     assert similarity("احمد", "احمد") == 100.0
+
+
+def test_weighted_similarity_identical_strings_is_100() -> None:
+    assert weighted_similarity("احمد محمد", "احمد محمد") == 100.0
+
+
+def test_weighted_similarity_tolerates_partial_or_reordered_tokens() -> None:
+    score = weighted_similarity("محمد احمد", "احمد محمد الشحات")
+    assert score >= 70.0
