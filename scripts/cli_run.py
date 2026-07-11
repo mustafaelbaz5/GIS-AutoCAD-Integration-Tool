@@ -23,6 +23,7 @@ from src.infrastructure.excel.base_file_reader import BaseFileReader
 from src.infrastructure.excel.professional_excel_writer import (
     ProfessionalExcelWriter,
     default_output_filename,
+    resolve_unique_path,
 )
 from src.infrastructure.excel.secondary_file_reader import SecondaryFileReader
 from src.infrastructure.excel.yaml_column_mapper import YamlColumnMapper
@@ -72,7 +73,7 @@ def run_pipeline(args: argparse.Namespace) -> Path:
     for warning in result.warnings:
         logger.warning(warning)
 
-    output_path = args.output_path or Path.cwd() / default_output_filename()
+    output_path = args.output_path or resolve_unique_path(Path.cwd() / default_output_filename())
     ExportFinalFileUseCase(ProfessionalExcelWriter()).execute(result.parcels, output_path)
     logger.info(f"Wrote output to {output_path}")
     return output_path

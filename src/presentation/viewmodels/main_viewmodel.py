@@ -15,6 +15,7 @@ from src.infrastructure.excel.base_file_reader import BaseFileReader
 from src.infrastructure.excel.professional_excel_writer import (
     ProfessionalExcelWriter,
     default_output_filename,
+    resolve_unique_path,
 )
 from src.infrastructure.excel.secondary_file_reader import SecondaryFileReader
 from src.infrastructure.excel.yaml_column_mapper import YamlColumnMapper
@@ -138,7 +139,7 @@ class MainViewModel(QObject):
         self.stats_ready.emit(result.stats)
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = self.output_dir / default_output_filename()
+        output_path = resolve_unique_path(self.output_dir / default_output_filename())
         ExportFinalFileUseCase(ProfessionalExcelWriter()).execute(
             result.parcels,
             output_path,

@@ -40,6 +40,23 @@ def default_output_filename(now: datetime | None = None) -> str:
     return f"merged_output_{timestamp}.xlsx"
 
 
+def resolve_unique_path(path: Path) -> Path:
+    """Return `path` if free, otherwise the first free "(1)", "(2)", ... variant.
+
+    The default filename is timestamped to the second, so two runs
+    started in the same second (or a pre-existing file with that exact
+    name) would otherwise silently overwrite each other.
+    """
+    if not path.exists():
+        return path
+    index = 1
+    while True:
+        candidate = path.with_name(f"{path.stem}({index}){path.suffix}")
+        if not candidate.exists():
+            return candidate
+        index += 1
+
+
 class ProfessionalExcelWriter(DataSinkPort):
     """Writes the final merged parcel list as a formatted .xlsx file.
 

@@ -15,6 +15,7 @@ from src.infrastructure.excel.output_schema import OUTPUT_COLUMNS
 from src.infrastructure.excel.professional_excel_writer import (
     ProfessionalExcelWriter,
     default_output_filename,
+    resolve_unique_path,
 )
 
 
@@ -245,3 +246,43 @@ def test_column_width_is_config_driven_not_hard_coded(tmp_path: Path) -> None:
     assert default_width == 35
     assert custom_width == 20
     assert default_width != custom_width
+
+
+def test_resolve_unique_path_returns_same_path_when_free(tmp_path: Path) -> None:
+    path = tmp_path / "output.xlsx"
+
+    assert resolve_unique_path(path) == path
+
+
+def test_resolve_unique_path_appends_index_when_taken(tmp_path: Path) -> None:
+    path = tmp_path / "output.xlsx"
+    path.write_text("existing file")
+
+    resolved = resolve_unique_path(path)
+
+    assert resolved == tmp_path / "output(1).xlsx"
+
+
+def test_resolve_unique_path_increments_past_multiple_collisions(tmp_path: Path) -> None:
+    path = tmp_path / "output.xlsx"
+    path.write_text("existing")
+    (tmp_path / "output(1).xlsx").write_text("existing")
+    (tmp_path / "output(2).xlsx").write_text("existing")
+
+    resolved = resolve_unique_path(path)
+
+    assert resolved == tmp_path / "output(3).xlsx"
+
+
+def test_resolve_unique_path_never_overwrites_an_existing_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "output.xlsx"
+    parcel = make_parcel("1", holder_name="First Run")
+    ProfessionalExcelWriter().write([parcel], resolve_unique_path(output_path))
+
+    second_parcel = make_parcel("2", holder_name="Second Run")
+    second_path = resolve_unique_path(output_path)
+    ProfessionalExcelWriter().write([second_parcel], second_path)
+
+    assert second_path != output_path
+    first_content = openpyxl.load_workbook(output_path).active.cell(row=2, column=7).value
+    assert first_content == "First Run"
