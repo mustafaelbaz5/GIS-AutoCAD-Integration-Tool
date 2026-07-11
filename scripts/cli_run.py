@@ -17,6 +17,7 @@ from loguru import logger
 from src.application.use_cases.export_final_file_use_case import ExportFinalFileUseCase
 from src.application.use_cases.merge_parcels_use_case import MergeParcelsUseCase
 from src.domain.services.spatial_sorter import SpatialSorter
+from src.infrastructure.config.default_landmarks import DEFAULT_LANDMARK_KEYWORDS
 from src.infrastructure.config.yaml_mapping_loader import load_mapping
 from src.infrastructure.excel.base_file_reader import BaseFileReader
 from src.infrastructure.excel.professional_excel_writer import (
@@ -31,17 +32,6 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _DEFAULT_MAPPINGS_DIR = _PROJECT_ROOT / "src" / "infrastructure" / "config" / "default_mappings"
 _DEFAULT_BASE_MAPPING = _DEFAULT_MAPPINGS_DIR / "system_file_default.yaml"
 _DEFAULT_SECONDARY_MAPPING = _DEFAULT_MAPPINGS_DIR / "seasonal_survey_default.yaml"
-
-# Externalized per project brief §5.5; a future mapping revision could
-# move this into the YAML config if it needs to vary per export.
-DEFAULT_LANDMARK_KEYWORDS = [
-    "مصرف صرف",
-    "مروى طريق",
-    "طريق ترعة رى",
-    "مصرف",
-    "مروى رى",
-    "ترعة رى",
-]
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

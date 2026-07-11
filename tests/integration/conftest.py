@@ -5,9 +5,11 @@ tests referencing them skip gracefully (rather than fail) when the
 files are not present locally.
 """
 
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from PySide6.QtWidgets import QApplication
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASE_FILE_PATH = PROJECT_ROOT / "الاخوه.xlsx"
@@ -29,3 +31,10 @@ def base_file_path() -> Path:
 def secondary_file_path() -> Path:
     _skip_if_missing(SECONDARY_FILE_PATH)
     return SECONDARY_FILE_PATH
+
+
+@pytest.fixture(scope="session")
+def qapp() -> Iterator[QApplication]:
+    """A single QApplication instance shared across GUI-touching tests."""
+    app = QApplication.instance() or QApplication([])
+    yield app

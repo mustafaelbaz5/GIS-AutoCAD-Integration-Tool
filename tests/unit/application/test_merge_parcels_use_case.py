@@ -169,3 +169,14 @@ def test_spatial_sorter_is_applied_when_provided() -> None:
     result = MergeParcelsUseCase(base, secondary, spatial_sorter=sorter).execute()
 
     assert [str(p.holding_id) for p in result.parcels] == ["1", "2"]
+
+
+def test_reports_progress_from_zero_to_hundred() -> None:
+    base = FakeDataSource([make_record(holding_id_raw=str(i)) for i in range(1, 6)])
+    secondary = FakeDataSource([])
+    events: list[tuple[int, str]] = []
+
+    MergeParcelsUseCase(base, secondary).execute(on_progress=lambda p, m: events.append((p, m)))
+
+    assert events[0] == (0, "Reading base file...")
+    assert events[-1][0] == 100

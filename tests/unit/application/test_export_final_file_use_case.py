@@ -54,3 +54,15 @@ def test_works_with_empty_parcel_list() -> None:
     ExportFinalFileUseCase(sink).execute([], Path("/tmp/output.xlsx"))
 
     assert sink.written_parcels == []
+
+
+def test_reports_progress_start_and_end() -> None:
+    sink = FakeDataSink()
+    events: list[tuple[int, str]] = []
+
+    ExportFinalFileUseCase(sink).execute(
+        [make_parcel("1")], Path("/tmp/output.xlsx"), on_progress=lambda p, m: events.append((p, m))
+    )
+
+    assert events[0][0] == 0
+    assert events[-1][0] == 100

@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from src.application.dto.merge_result import MergeResult
 from src.application.dto.parcel_record import ParcelRecord
 from src.application.ports.data_source_port import DataSourcePort
+from src.application.progress import ProgressCallback
 from src.domain.entities.basin import Basin
 from src.domain.entities.borders import Borders
 from src.domain.entities.holder import Holder
@@ -34,27 +35,48 @@ class MergeParcelsUseCase:
         self._secondary_source = secondary_source
         self._spatial_sorter = spatial_sorter
 
-    def execute(self) -> MergeResult:
-        """Run the merge (and optional spatial sort) and return the result."""
+    def execute(self, on_progress: ProgressCallback | None = None) -> MergeResult:
+        """Run the merge (and optional spatial sort) and return the result.
+
+        Args:
+            on_progress: Optional callback invoked with (percent, message)
+                as the merge advances, for a UI progress bar to bind to.
+        """
+
+        def report(percent: int, message: str) -> None:
+            if on_progress is not None:
+                on_progress(percent, message)
+
+        report(0, "Reading base file...")
         base_records = self._base_source.read()
+        report(20, f"Read {len(base_records)} base records")
+
+        report(25, "Reading secondary file...")
         secondary_by_key = self._index_by_join_key(self._secondary_source.read())
+        report(45, "Merging records...")
 
         parcels: list[Parcel] = []
         warnings: list[str] = []
+        total = len(base_records)
+        progress_step = max(1, total // 20)
 
-        for base_record in base_records:
+        for index, base_record in enumerate(base_records, start=1):
             secondary_record = self._find_match(base_record, secondary_by_key)
             parcel = self._build_parcel(base_record, secondary_record)
             if parcel is None:
                 warnings.append("Skipped a base row with no holding ID (رقم الحيازة).")
                 continue
             parcels.append(parcel)
+            if index % progress_step == 0:
+                report(45 + int(40 * index / total), f"Merging record {index}/{total}")
 
         if self._spatial_sorter is not None:
+            report(90, "Sorting parcels spatially...")
             sort_result = self._spatial_sorter.sort(parcels)
             parcels = sort_result.parcels
             warnings.extend(sort_result.warnings)
 
+        report(100, "Merge complete")
         return MergeResult(parcels=parcels, warnings=warnings)
 
     def _index_by_join_key(self, records: Sequence[ParcelRecord]) -> dict[str, ParcelRecord]:
