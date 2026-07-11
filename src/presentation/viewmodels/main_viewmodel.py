@@ -54,6 +54,8 @@ class MainViewModel(QObject):
         self.secondary_file_path: Path | None = None
         self.output_dir: Path = DEFAULT_OUTPUT_DIR
         self.enable_spatial_sort: bool = True
+        self.include_laghi_rows: bool = False
+        self.secondary_mapping_path: Path | None = None
         self._cancel_requested = False
 
     def set_base_file(self, path: str) -> None:
@@ -114,12 +116,16 @@ class MainViewModel(QObject):
 
     def _run(self, base_file_path: Path, secondary_file_path: Path) -> Path:
         base_config = load_mapping(_DEFAULT_BASE_MAPPING)
-        secondary_config = load_mapping(_DEFAULT_SECONDARY_MAPPING)
+        secondary_mapping_path = self.secondary_mapping_path or _DEFAULT_SECONDARY_MAPPING
+        secondary_config = load_mapping(secondary_mapping_path)
 
         base_reader = BaseFileReader(base_file_path, base_config)
         secondary_mapper = YamlColumnMapper(secondary_config["fields"])
         secondary_reader = SecondaryFileReader(
-            secondary_file_path, secondary_mapper, secondary_config
+            secondary_file_path,
+            secondary_mapper,
+            secondary_config,
+            apply_exclusion=not self.include_laghi_rows,
         )
         sorter = SpatialSorter(DEFAULT_LANDMARK_KEYWORDS) if self.enable_spatial_sort else None
 

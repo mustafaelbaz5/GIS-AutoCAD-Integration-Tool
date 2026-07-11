@@ -38,3 +38,12 @@ SUCCESS_DIALOG_MESSAGE = "تم إنشاء الملف بنجاح."
 OPEN_FOLDER_BUTTON = "فتح المجلد"
 OPEN_FILE_BUTTON = "فتح الملف"
 CLOSE_BUTTON = "إغلاق"
+
+# Advanced settings panel
+ADVANCED_SETTINGS_TITLE = "⚙ إعدادات متقدمة"
+CHOOSE_MAPPING_BUTTON = "اختيار"
+DEFAULT_MAPPING_LABEL = "الإعداد الافتراضي"
+INCLUDE_LAGHI_LABEL = "تضمين الصفوف الملغاة (لاغى)"
+ENABLE_SPATIAL_SORT_LABEL = "تفعيل الترتيب المكاني"
+SAVE_PRESET_BUTTON = "حفظ الإعدادات"
+LOAD_PRESET_BUTTON = "تحميل الإعدادات"

@@ -25,10 +25,17 @@ class SecondaryFileReader(DataSourcePort):
     width), since this file has dozens of unused columns per row.
     """
 
-    def __init__(self, path: Path, mapper: ColumnMapperPort, config: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        path: Path,
+        mapper: ColumnMapperPort,
+        config: dict[str, Any],
+        apply_exclusion: bool = True,
+    ) -> None:
         self._path = path
         self._mapper = mapper
         self._config = config
+        self._apply_exclusion = apply_exclusion
 
     def read(self) -> list[ParcelRecord]:
         """Read, exclude, and map all data rows to `ParcelRecord`s."""
@@ -37,7 +44,7 @@ class SecondaryFileReader(DataSourcePort):
         worksheet = workbook[sheet_name] if sheet_name else workbook.active
 
         data_start = int(self._config["data_starts_at_row"])
-        exclude_config = self._config.get("exclude_when")
+        exclude_config = self._config.get("exclude_when") if self._apply_exclusion else None
         fields: dict[str, str] = self._config["fields"]
 
         needed_columns = set(fields.values())

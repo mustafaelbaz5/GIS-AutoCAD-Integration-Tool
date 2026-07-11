@@ -28,6 +28,7 @@ from src.presentation.i18n.ar import (
     SUCCESS_DIALOG_TITLE,
 )
 from src.presentation.viewmodels.main_viewmodel import MainViewModel
+from src.presentation.widgets.advanced_settings_panel import AdvancedSettings, AdvancedSettingsPanel
 from src.presentation.widgets.drop_zone import DropZone
 from src.presentation.widgets.log_console import LogConsole, LogLevel
 from src.presentation.widgets.path_selector import PathSelector
@@ -75,6 +76,9 @@ class MainWindow(QMainWindow):
         self._path_selector = PathSelector()
         layout.addWidget(self._path_selector)
 
+        self._advanced_settings_panel = AdvancedSettingsPanel()
+        layout.addWidget(self._advanced_settings_panel)
+
         buttons_row = QHBoxLayout()
         self._start_button = QPushButton(START_BUTTON)
         self._start_button.setProperty("success", True)
@@ -99,9 +103,17 @@ class MainWindow(QMainWindow):
         self._base_drop_zone.file_selected.connect(self._viewmodel.set_base_file)
         self._secondary_drop_zone.file_selected.connect(self._viewmodel.set_secondary_file)
         self._path_selector.path_changed.connect(self._viewmodel.set_output_dir)
+        self._advanced_settings_panel.settings_changed.connect(self._on_advanced_settings_changed)
 
         self._viewmodel.progress_changed.connect(self._progress_panel.set_progress)
         self._viewmodel.log_emitted.connect(self._on_log_emitted)
+
+    def _on_advanced_settings_changed(self, settings: AdvancedSettings) -> None:
+        self._viewmodel.secondary_mapping_path = (
+            Path(settings.secondary_mapping_path) if settings.secondary_mapping_path else None
+        )
+        self._viewmodel.include_laghi_rows = settings.include_laghi_rows
+        self._viewmodel.enable_spatial_sort = settings.enable_spatial_sort
 
     def _on_start_clicked(self) -> None:
         self._log_console.clear_log()

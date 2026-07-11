@@ -5,7 +5,9 @@
       "Bash(./.venv/Scripts/python.exe -m pytest tests/)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(./.venv/Scripts/python.exe -m pytest tests/integration/test_main_viewmodel.py -v)",
-      "Bash(./.venv/Scripts/python.exe -m ruff check src/ tests/ scripts/)"
+      "Bash(./.venv/Scripts/python.exe -m ruff check src/ tests/ scripts/)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/unit tests/integration/test_professional_excel_writer.py tests/integration/test_join_key_normalization.py tests/integration/test_secondary_file_reader_exclusion_toggle.py -v)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/unit/presentation -v)"
     ]
   }
 }
