@@ -16,21 +16,13 @@ from PySide6.QtWidgets import (
 from src.application.dto.processing_stats import ProcessingStats
 from src.presentation.i18n.ar import (
     INCOMPLETE_ROWS_POPOVER_TITLE,
-    STAT_BASE_ONLY,
-    STAT_COMPLETE_ROWS,
     STAT_DISTINCT_BASINS,
-    STAT_ELAPSED_TIME,
-    STAT_ELAPSED_TIME_UNIT,
-    STAT_EXCLUDED_LAGHI,
     STAT_INCOMPLETE_ROWS,
-    STAT_SECONDARY_ONLY,
-    STAT_TOP_BASINS,
     STAT_TOTAL_FEDDAN,
     STAT_TOTAL_MERGED,
     STAT_TOTAL_SQM,
     STAT_UNPLACED,
     STAT_WITH_NATIONAL_ID,
-    STAT_WITHOUT_NATIONAL_ID,
     STATS_PANEL_TITLE,
 )
 from src.presentation.widgets.stat_card import StatCard
@@ -40,12 +32,6 @@ _GRID_COLUMNS = 3
 
 def _thousands(value: float) -> str:
     return f"{value:,.2f}"
-
-
-def _top_basins_text(top_basins: list[tuple[str, int]]) -> str:
-    if not top_basins:
-        return "—"
-    return "، ".join(f"{name} ({count})" for name, count in top_basins)
 
 
 class StatsPanel(QWidget):
@@ -93,28 +79,12 @@ class StatsPanel(QWidget):
 
         return [
             StatCard("🌾", STAT_TOTAL_MERGED, str(stats.total_merged), variant="success"),
-            StatCard("✔", STAT_COMPLETE_ROWS, str(stats.complete_rows), variant="success"),
             incomplete_card,
-            StatCard("📄", STAT_BASE_ONLY, str(stats.base_only_count)),
-            StatCard("📄", STAT_SECONDARY_ONLY, str(stats.secondary_only_count)),
             StatCard("🪪", STAT_WITH_NATIONAL_ID, str(stats.with_national_id)),
-            StatCard("🪪", STAT_WITHOUT_NATIONAL_ID, str(stats.without_national_id)),
-            StatCard(
-                "🚫",
-                STAT_EXCLUDED_LAGHI,
-                str(stats.excluded_laghi_count),
-                variant="warning" if stats.excluded_laghi_count else "neutral",
-            ),
             StatCard("📐", STAT_TOTAL_FEDDAN, _thousands(stats.total_feddan)),
             StatCard("📐", STAT_TOTAL_SQM, _thousands(stats.total_sqm)),
             StatCard("🗺", STAT_DISTINCT_BASINS, str(stats.distinct_basin_count)),
-            StatCard("🏆", STAT_TOP_BASINS, _top_basins_text(stats.top_basins)),
             unplaced_card,
-            StatCard(
-                "⏱",
-                STAT_ELAPSED_TIME,
-                STAT_ELAPSED_TIME_UNIT.format(seconds=stats.elapsed_seconds),
-            ),
         ]
 
     def _show_incomplete_popover(self, stats: ProcessingStats) -> None:

@@ -1,4 +1,5 @@
-"""Professional Excel writer for the final merged output, per §8."""
+"""Professional Excel writer for the final merged output, per §8 and
+Iteration 2 Task B (typography/column-width refinements)."""
 
 from collections.abc import Sequence
 from datetime import datetime
@@ -12,10 +13,11 @@ from openpyxl.worksheet.worksheet import Worksheet
 from src.application.ports.data_sink_port import DataSinkPort
 from src.domain.entities.parcel import Parcel
 from src.domain.services.area_calculator import AreaCalculator
+from src.infrastructure.excel.formatting_config import DEFAULT_FORMATTING_CONFIG, FormattingConfig
 from src.infrastructure.excel.output_schema import OUTPUT_COLUMNS
 
 _HEADER_FILL = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
-_HEADER_FONT = Font(color="F1F5F9", bold=True)
+_HEADER_TEXT_COLOR = "F1F5F9"
 _HEADER_ALIGNMENT = Alignment(horizontal="center", vertical="center")
 
 _THIN_SIDE = Side(style="thin", color="CBD5E1")
@@ -44,8 +46,21 @@ class ProfessionalExcelWriter(DataSinkPort):
     Implements the formatting rules of project brief §8: styled header,
     RTL sheet direction, frozen header row, thin borders, banded fill
     per basin block with a blank separator row between basins, and a
-    totals row.
+    totals row. Column widths, font sizes/family, and row heights come
+    from an injected `FormattingConfig` (Iteration 2 Task B) rather
+    than being hard-coded, so they're a one-file tuning knob.
     """
+
+    def __init__(self, config: FormattingConfig = DEFAULT_FORMATTING_CONFIG) -> None:
+        self._config = config
+        self._header_font = Font(
+            name=config.font_family,
+            size=config.header_font_size,
+            color=_HEADER_TEXT_COLOR,
+            bold=True,
+        )
+        self._body_font = Font(name=config.font_family, size=config.body_font_size)
+        self._totals_font = Font(name=config.font_family, size=config.body_font_size, bold=True)
 
     def write(self, parcels: Sequence[Parcel], output_path: Path) -> None:
         """Write `parcels` to `output_path` as a formatted .xlsx file."""
@@ -64,10 +79,11 @@ class ProfessionalExcelWriter(DataSinkPort):
         workbook.save(output_path)
 
     def _write_header(self, worksheet: Worksheet) -> None:
+        worksheet.row_dimensions[1].height = self._config.header_row_height
         for col_index, column in enumerate(OUTPUT_COLUMNS, start=1):
             cell = worksheet.cell(row=1, column=col_index, value=column.header)
             cell.fill = _HEADER_FILL
-            cell.font = _HEADER_FONT
+            cell.font = self._header_font
             cell.alignment = _HEADER_ALIGNMENT
             cell.border = _THIN_BORDER
 
@@ -91,10 +107,12 @@ class ProfessionalExcelWriter(DataSinkPort):
     def _write_row(
         self, worksheet: Worksheet, row_index: int, parcel: Parcel, band_toggle: bool
     ) -> None:
+        worksheet.row_dimensions[row_index].height = self._config.data_row_height
         fill = _BAND_FILL_B if band_toggle else _BAND_FILL_A
         for col_index, column in enumerate(OUTPUT_COLUMNS, start=1):
             cell = worksheet.cell(row=row_index, column=col_index, value=column.getter(parcel))
             cell.fill = fill
+            cell.font = self._body_font
             cell.border = _THIN_BORDER
             if column.is_numeric:
                 cell.number_format = _NUMBER_FORMAT
@@ -105,17 +123,18 @@ class ProfessionalExcelWriter(DataSinkPort):
         self, worksheet: Worksheet, last_data_row: int, parcels: Sequence[Parcel]
     ) -> None:
         row_index = last_data_row + 1
+        worksheet.row_dimensions[row_index].height = self._config.data_row_height
         totals = self._compute_totals(parcels)
 
         label_cell = worksheet.cell(row=row_index, column=1, value=_TOTALS_LABEL)
-        label_cell.font = Font(bold=True)
+        label_cell.font = self._totals_font
         label_cell.border = _THIN_BORDER
 
         for col_index, column in enumerate(OUTPUT_COLUMNS, start=1):
             if column.header not in totals:
                 continue
             cell = worksheet.cell(row=row_index, column=col_index, value=totals[column.header])
-            cell.font = Font(bold=True)
+            cell.font = self._totals_font
             cell.border = _THIN_BORDER
             cell.number_format = _NUMBER_FORMAT
 
@@ -138,4 +157,5 @@ class ProfessionalExcelWriter(DataSinkPort):
                 value = column.getter(parcel)
                 if value is not None:
                     max_length = max(max_length, len(str(value)))
-            worksheet.column_dimensions[get_column_letter(col_index)].width = max_length + 4
+            width = self._config.column_width(column.header, max_length)
+            worksheet.column_dimensions[get_column_letter(col_index)].width = width
