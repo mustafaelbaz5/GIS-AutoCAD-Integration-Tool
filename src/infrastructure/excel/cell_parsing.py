@@ -6,7 +6,7 @@ Arabic-text concern but an artifact of how these particular source
 files are authored.
 """
 
-_BORDER_PLACEHOLDERS = {"،،", "،", "-", "--"}
+_BORDER_PLACEHOLDERS = {"،،", "،", "-", "--", "_", "__"}
 
 
 def clean_text(value: object) -> str | None:
@@ -20,8 +20,8 @@ def clean_text(value: object) -> str | None:
 def clean_border(value: object) -> str | None:
     """Like `clean_text`, but also treats placeholder punctuation as empty.
 
-    Source files use "،،" or "-" to mark a border cell with no real
-    value. These are not landmark or holder-name text and would
+    Source files use "،،", "-", or "_" to mark a border cell with no
+    real value. These are not landmark or holder-name text and would
     otherwise confuse the spatial sorter.
     """
     text = clean_text(value)
@@ -31,18 +31,26 @@ def clean_border(value: object) -> str | None:
 
 
 def parse_number(value: object) -> float | None:
-    """Parse a numeric cell, tolerating strings, ints, floats, and blanks."""
+    """Parse an area-component cell (فدان/قيراط/سهم), tolerating strings,
+    ints, floats, and blanks.
+
+    Source files occasionally contain a negative value here (a data
+    error in the source report, not a real physical measurement —
+    confirmed against real rows that are otherwise normal holdings).
+    Since area can never legitimately be negative, these are clamped
+    to 0 rather than propagated or fabricated into something else.
+    """
     if value is None:
         return None
     if isinstance(value, bool):
         return None
     if isinstance(value, int | float):
-        return float(value)
+        return max(0.0, float(value))
     text = str(value).strip()
     if text == "":
         return None
     try:
-        return float(text)
+        return max(0.0, float(text))
     except ValueError:
         return None
 

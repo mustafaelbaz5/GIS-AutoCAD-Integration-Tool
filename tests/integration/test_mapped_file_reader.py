@@ -24,7 +24,7 @@ _MAPPINGS_DIR = (
     Path(__file__).resolve().parents[2] / "src" / "infrastructure" / "config" / "default_mappings"
 )
 SYSTEM_MAPPING_PATH = _MAPPINGS_DIR / "system_file_default.yaml"
-LEGACY_SYSTEM_MAPPING_PATH = _MAPPINGS_DIR / "system_file_legacy_lands_report.yaml"
+EXTERNAL_MAPPING_PATH = _MAPPINGS_DIR / "external_file_default.yaml"
 SEASONAL_MAPPING_PATH = _MAPPINGS_DIR / "seasonal_survey_default.yaml"
 
 SEASONAL_SHEET_NAME = "سجل 2 خدمات"
@@ -38,22 +38,24 @@ def _read_system_records(base_file_path: Path) -> list[Any]:
     return MappedFileReader(base_file_path, mapper, config).read()
 
 
-def _read_legacy_system_records(legacy_base_file_path: Path) -> list[Any]:
-    config = load_mapping(LEGACY_SYSTEM_MAPPING_PATH)
+def _read_external_records(secondary_file_path: Path) -> list[Any]:
+    config = load_mapping(EXTERNAL_MAPPING_PATH)
     mapper = YamlColumnMapper(config["fields"])
-    return MappedFileReader(legacy_base_file_path, mapper, config).read()
+    return MappedFileReader(secondary_file_path, mapper, config).read()
 
 
-def _read_seasonal_records(secondary_file_path: Path, apply_exclusion: bool = True) -> list[Any]:
+def _read_seasonal_records(
+    seasonal_secondary_file_path: Path, apply_exclusion: bool = True
+) -> list[Any]:
     config = load_mapping(SEASONAL_MAPPING_PATH)
     mapper = YamlColumnMapper(config["fields"])
     return MappedFileReader(
-        secondary_file_path, mapper, config, apply_exclusion=apply_exclusion
+        seasonal_secondary_file_path, mapper, config, apply_exclusion=apply_exclusion
     ).read()
 
 
-def _seasonal_raw_rows(secondary_file_path: Path) -> Iterator[dict[str, Any]]:
-    workbook = openpyxl.load_workbook(secondary_file_path, data_only=True)
+def _seasonal_raw_rows(seasonal_secondary_file_path: Path) -> Iterator[dict[str, Any]]:
+    workbook = openpyxl.load_workbook(seasonal_secondary_file_path, data_only=True)
     worksheet = workbook[SEASONAL_SHEET_NAME]
     for row_number in range(SEASONAL_DATA_START_ROW, worksheet.max_row + 1):
         yield {
@@ -67,91 +69,110 @@ def _is_excluded_row(cells: dict[str, Any]) -> bool:
     return m_value is not None and normalize_arabic(str(m_value)) in _EXCLUDED_TARGETS
 
 
-# --- System-file mapping (real file, current "approved holdings" format) ---
+# --- System-file mapping (real file, parcel-level "lands report" format) ---
 
 
-def test_system_mapping_reads_all_928_data_rows(base_file_path: Path) -> None:
+def test_system_mapping_reads_all_1137_data_rows(base_file_path: Path) -> None:
     records = _read_system_records(base_file_path)
+    assert len(records) == 1137
+
+
+def test_system_mapping_preserves_leading_zeros(base_file_path: Path) -> None:
+    records = _read_system_records(base_file_path)
+    assert records[0].holding_id_raw == "00240"
+
+
+def test_system_mapping_known_first_row_holder_and_basin(base_file_path: Path) -> None:
+    records = _read_system_records(base_file_path)
+    first = records[0]
+    assert first.basin_name == "الكبيرة الغربى"
+    assert first.holder_name == "اسلام محمد محمد سرحان"
+    assert first.directorate == "الدقهليه"
+    assert first.administration == "اجا"
+
+
+def test_system_mapping_border_placeholders_are_normalized_to_none(base_file_path: Path) -> None:
+    records = _read_system_records(base_file_path)
+    for placeholder in ("-", "_"):
+        assert all(r.east != placeholder for r in records)
+        assert all(r.west != placeholder for r in records)
+        assert all(r.south != placeholder for r in records)
+        assert all(r.north != placeholder for r in records)
+
+
+def test_system_mapping_basin_code_column_is_empty(base_file_path: Path) -> None:
+    """This report never populates كود الحوض — only اسم الحوض."""
+    records = _read_system_records(base_file_path)
+    assert all(r.basin_code is None for r in records)
+
+
+def test_system_mapping_never_fabricates_national_id(base_file_path: Path) -> None:
+    """This report has no national-ID column — must stay None, never guessed."""
+    records = _read_system_records(base_file_path)
+    assert all(r.national_id is None for r in records)
+
+
+# --- External-file mapping (real file, "approved holdings" format) ---------
+
+
+def test_external_mapping_reads_all_928_data_rows(secondary_file_path: Path) -> None:
+    records = _read_external_records(secondary_file_path)
     assert len(records) == 928
 
 
-def test_system_mapping_join_key_comes_from_column_r(base_file_path: Path) -> None:
-    records = _read_system_records(base_file_path)
+def test_external_mapping_join_key_comes_from_column_r(secondary_file_path: Path) -> None:
+    records = _read_external_records(secondary_file_path)
     assert records[0].holding_id_raw == "221"
     assert records[0].holder_name == "ابتسام حسن حسن البرقى"
 
 
-def test_system_mapping_national_id_is_read_directly(base_file_path: Path) -> None:
-    records = _read_system_records(base_file_path)
+def test_external_mapping_national_id_is_read_directly(secondary_file_path: Path) -> None:
+    records = _read_external_records(secondary_file_path)
     assert records[0].national_id == "26711121202206"
     assert all(r.national_id is None or len(r.national_id) == 14 for r in records)
 
 
-def test_system_mapping_area_fields_are_read(base_file_path: Path) -> None:
-    records = _read_system_records(base_file_path)
+def test_external_mapping_area_fields_are_read(secondary_file_path: Path) -> None:
+    records = _read_external_records(secondary_file_path)
     first = records[0]
     assert first.feddan == 0.0
     assert first.qirat == 13.0
     assert first.sahm == 0.0
 
 
-def test_system_mapping_never_fabricates_unmapped_fields(base_file_path: Path) -> None:
+def test_external_mapping_never_fabricates_unmapped_fields(secondary_file_path: Path) -> None:
     """This report has no basin/border/land-number columns at all — every
     row must resolve those fields to None, never a guessed value."""
-    records = _read_system_records(base_file_path)
+    records = _read_external_records(secondary_file_path)
     assert all(r.basin_name is None for r in records)
     assert all(r.basin_code is None for r in records)
     assert all(r.east is None for r in records)
     assert all(r.land_number is None for r in records)
 
 
-# --- Legacy system-file mapping (real file, older parcel-level format) -----
-
-
-def test_legacy_system_mapping_reads_all_2930_data_rows(legacy_base_file_path: Path) -> None:
-    records = _read_legacy_system_records(legacy_base_file_path)
-    assert len(records) == 2930
-
-
-def test_legacy_system_mapping_preserves_leading_zeros(legacy_base_file_path: Path) -> None:
-    records = _read_legacy_system_records(legacy_base_file_path)
-    assert records[0].holding_id_raw == "010"
-
-
-def test_legacy_system_mapping_known_first_row_holder_and_basin(
-    legacy_base_file_path: Path,
+def test_base_and_external_join_keys_fully_overlap(
+    base_file_path: Path, secondary_file_path: Path
 ) -> None:
-    records = _read_legacy_system_records(legacy_base_file_path)
-    first = records[0]
-    assert first.basin_name == "الشيكاره"
-    assert first.holder_name == "وليد خطاب الشاذلى الشاذلى"
+    """Sanity check that these two real files are actually meant to be
+    merged together: every base-file رقم الحيازة should have a match in
+    the external file, once leading zeros are normalized."""
+    from src.domain.value_objects.holding_id import normalize_for_join
+
+    base_ids = {normalize_for_join(r.holding_id_raw) for r in _read_system_records(base_file_path)}
+    external_ids = {
+        normalize_for_join(r.holding_id_raw) for r in _read_external_records(secondary_file_path)
+    }
+    assert base_ids <= external_ids
 
 
-def test_legacy_system_mapping_border_placeholders_are_normalized_to_none(
-    legacy_base_file_path: Path,
-) -> None:
-    records = _read_legacy_system_records(legacy_base_file_path)
-    assert all(r.east != "،،" for r in records)
-    assert all(r.west != "،،" for r in records)
-    assert all(r.south != "،،" for r in records)
-    assert all(r.north != "،،" for r in records)
+# --- Seasonal-survey mapping (real file, older secondary-file format) ------
 
 
-def test_legacy_system_mapping_basin_code_column_is_empty(
-    legacy_base_file_path: Path,
-) -> None:
-    records = _read_legacy_system_records(legacy_base_file_path)
-    assert all(r.basin_code is None for r in records)
-
-
-# --- Seasonal-survey mapping (real file) ------------------------------------
-
-
-def test_seasonal_mapping_excludes_laghi_rows(secondary_file_path: Path) -> None:
+def test_seasonal_mapping_excludes_laghi_rows(seasonal_secondary_file_path: Path) -> None:
     excluded_pairs: set[tuple[str, str | None]] = set()
     kept_pairs: set[tuple[str, str | None]] = set()
 
-    for cells in _seasonal_raw_rows(secondary_file_path):
+    for cells in _seasonal_raw_rows(seasonal_secondary_file_path):
         holding_id = str(cells["K"]).strip() if cells["K"] is not None else None
         if not holding_id:
             continue
@@ -162,14 +183,14 @@ def test_seasonal_mapping_excludes_laghi_rows(secondary_file_path: Path) -> None
     purely_excluded_pairs = excluded_pairs - kept_pairs
     assert purely_excluded_pairs, "sanity check: expected a لاغى row with no non-excluded duplicate"
 
-    records = _read_seasonal_records(secondary_file_path)
+    records = _read_seasonal_records(seasonal_secondary_file_path)
     present_pairs = {(r.holding_id_raw, r.holder_name) for r in records}
     assert purely_excluded_pairs.isdisjoint(present_pairs)
 
 
-def test_seasonal_mapping_reads_valid_national_id(secondary_file_path: Path) -> None:
+def test_seasonal_mapping_reads_valid_national_id(seasonal_secondary_file_path: Path) -> None:
     expected = None
-    for cells in _seasonal_raw_rows(secondary_file_path):
+    for cells in _seasonal_raw_rows(seasonal_secondary_file_path):
         if _is_excluded_row(cells):
             continue
         if cells["AD"] is not None and cells["K"] is not None:
@@ -179,7 +200,7 @@ def test_seasonal_mapping_reads_valid_national_id(secondary_file_path: Path) -> 
             break
     assert expected is not None, "sanity check: expected a non-excluded row with a national ID"
 
-    records = _read_seasonal_records(secondary_file_path)
+    records = _read_seasonal_records(seasonal_secondary_file_path)
     assert any(
         (r.holding_id_raw, r.national_id) == expected and len(r.national_id or "") == 14
         for r in records
@@ -187,10 +208,10 @@ def test_seasonal_mapping_reads_valid_national_id(secondary_file_path: Path) -> 
 
 
 def test_seasonal_mapping_basin_numeric_value_maps_to_basin_code(
-    secondary_file_path: Path,
+    seasonal_secondary_file_path: Path,
 ) -> None:
     expected = None
-    for cells in _seasonal_raw_rows(secondary_file_path):
+    for cells in _seasonal_raw_rows(seasonal_secondary_file_path):
         if _is_excluded_row(cells):
             continue
         af = cells["AF"]
@@ -199,16 +220,18 @@ def test_seasonal_mapping_basin_numeric_value_maps_to_basin_code(
             break
     assert expected is not None, "sanity check: expected a non-excluded row with a numeric الجوض"
 
-    records = _read_seasonal_records(secondary_file_path)
+    records = _read_seasonal_records(seasonal_secondary_file_path)
     assert any(
         r.holding_id_raw == expected[0] and r.basin_code == expected[1] and r.basin_name is None
         for r in records
     )
 
 
-def test_seasonal_mapping_basin_text_value_maps_to_basin_name(secondary_file_path: Path) -> None:
+def test_seasonal_mapping_basin_text_value_maps_to_basin_name(
+    seasonal_secondary_file_path: Path,
+) -> None:
     expected = None
-    for cells in _seasonal_raw_rows(secondary_file_path):
+    for cells in _seasonal_raw_rows(seasonal_secondary_file_path):
         if _is_excluded_row(cells):
             continue
         af = cells["AF"]
@@ -217,16 +240,16 @@ def test_seasonal_mapping_basin_text_value_maps_to_basin_name(secondary_file_pat
             break
     assert expected is not None, "sanity check: expected a non-excluded row with a text الجوض"
 
-    records = _read_seasonal_records(secondary_file_path)
+    records = _read_seasonal_records(seasonal_secondary_file_path)
     assert any(
         r.holding_id_raw == expected[0] and r.basin_name == expected[1] and r.basin_code is None
         for r in records
     )
 
 
-def test_seasonal_mapping_area_uses_total_group(secondary_file_path: Path) -> None:
+def test_seasonal_mapping_area_uses_total_group(seasonal_secondary_file_path: Path) -> None:
     expected = None
-    for cells in _seasonal_raw_rows(secondary_file_path):
+    for cells in _seasonal_raw_rows(seasonal_secondary_file_path):
         if _is_excluded_row(cells):
             continue
         if cells["AA"] is not None and cells["K"] is not None:
@@ -235,7 +258,7 @@ def test_seasonal_mapping_area_uses_total_group(secondary_file_path: Path) -> No
     assert expected is not None, "sanity check: expected a non-excluded row with جملة area values"
 
     holding_id, sahm, qirat, feddan = expected
-    records = _read_seasonal_records(secondary_file_path)
+    records = _read_seasonal_records(seasonal_secondary_file_path)
     assert any(
         r.holding_id_raw == holding_id
         and r.sahm == sahm
@@ -245,10 +268,12 @@ def test_seasonal_mapping_area_uses_total_group(secondary_file_path: Path) -> No
     )
 
 
-def test_seasonal_mapping_borders_and_land_number_stay_none(secondary_file_path: Path) -> None:
+def test_seasonal_mapping_borders_and_land_number_stay_none(
+    seasonal_secondary_file_path: Path,
+) -> None:
     """The seasonal mapping declares no border/land-number fields, so
     MappedFileReader must leave them None — never invented."""
-    records = _read_seasonal_records(secondary_file_path)
+    records = _read_seasonal_records(seasonal_secondary_file_path)
     assert all(r.east is None for r in records)
     assert all(r.land_number is None for r in records)
 
@@ -380,14 +405,14 @@ def test_row_with_blank_join_key_is_skipped_not_errored(tmp_path: Path) -> None:
 
 def test_all_default_mappings_load_without_error() -> None:
     system_config = load_mapping(SYSTEM_MAPPING_PATH)
-    legacy_system_config = load_mapping(LEGACY_SYSTEM_MAPPING_PATH)
+    external_config = load_mapping(EXTERNAL_MAPPING_PATH)
     seasonal_config = load_mapping(SEASONAL_MAPPING_PATH)
 
     assert "join_key_column" in system_config
-    assert "join_key_column" in legacy_system_config
+    assert "join_key_column" in external_config
     assert "join_key_column" in seasonal_config
-    assert system_config["join_key_column"] == "R"
-    assert legacy_system_config["join_key_column"] == "N"
+    assert system_config["join_key_column"] == "N"
+    assert external_config["join_key_column"] == "R"
     assert seasonal_config["join_key_column"] == "K"
 
 

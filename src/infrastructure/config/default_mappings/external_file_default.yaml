@@ -1,0 +1,45 @@
+# config/column_mappings/external_file_default.yaml
+# Mapping for the external/secondary-file export format, e.g.
+# م الاخوة.xlsx ("تقرير حيازات الجمعية المعتمدة حتى الآن" —
+# approved-society holdings report).
+#
+# This report is HOLDING-level, not parcel-level: there is no border
+# or رقم الأرض (land number) data anywhere in the file, and
+# المديرية/الإدارة/الجمعية are printed once near the top of the sheet
+# as report-level constants (e.g. row 12/14), not as per-row columns —
+# so they cannot be captured by a column mapping and are intentionally
+# left unmapped. Per §2.1, an unmapped field stays empty in the output;
+# it is never fabricated or guessed from the report banner. This lack
+# of border data is exactly why this format can't be the base/system
+# file — see system_file_default.yaml.
+#
+# Verified against the real sample file: single sheet
+# "AgricultureHoldingApprovedHoldi", header row 17, data starting row
+# 18, 928 data rows. Confirmed against a real base file
+# (مسجل_م الأخوة.xlsx): all 820 of the base file's رقم الحيازة values
+# have a matching row here via column R.
+#
+# The file has two distinct ID columns:
+#   - R "رقم الحيازة من واقع سجل 2 خدمات": short numeric values (e.g.
+#     "221") in exactly the same format (modulo leading zeros) as the
+#     base file's رقم الحيازة join column — this is what actually lets
+#     rows match across the two files.
+#   - L "الرقم الموحد للحيازة": a longer compound registry code (e.g.
+#     "06-3230-00323003-000224"). Not part of the domain's 17-column
+#     output schema, so not mapped — confirmed with the user that only
+#     R is needed for now.
+
+name: "External File (Default) — Approved Holdings Report"
+description: "Mapping for م الاخوة.xlsx-style تقرير حيازات الجمعية المعتمدة exports."
+
+sheet_name: "AgricultureHoldingApprovedHoldi"
+data_starts_at_row: 18
+
+join_key_column: "R"
+
+fields:
+  فدان: "E"
+  قيراط: "I"
+  سهم: "J"
+  اسم_الحائز: "X"
+  الرقم_القومي: "V"

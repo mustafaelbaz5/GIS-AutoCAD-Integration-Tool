@@ -31,7 +31,7 @@ from src.infrastructure.logging_setup import configure_logging
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _DEFAULT_MAPPINGS_DIR = _PROJECT_ROOT / "src" / "infrastructure" / "config" / "default_mappings"
 _DEFAULT_BASE_MAPPING = _DEFAULT_MAPPINGS_DIR / "system_file_default.yaml"
-_DEFAULT_SECONDARY_MAPPING = _DEFAULT_MAPPINGS_DIR / "seasonal_survey_default.yaml"
+_DEFAULT_SECONDARY_MAPPING = _DEFAULT_MAPPINGS_DIR / "external_file_default.yaml"
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

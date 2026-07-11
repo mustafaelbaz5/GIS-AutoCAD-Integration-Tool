@@ -13,17 +13,18 @@ from PySide6.QtWidgets import QApplication
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-# The current default system-file sample ("approved holdings" report
-# format, matches system_file_default.yaml).
-BASE_FILE_PATH = PROJECT_ROOT / "م الاخوة.xlsx"
+# The base/system-file sample: parcel-level report with border/basin
+# data, matches system_file_default.yaml.
+BASE_FILE_PATH = PROJECT_ROOT / "مسجل_م الأخوة.xlsx"
 
-# The older parcel-level system-file sample (matches
-# system_file_legacy_lands_report.yaml). Kept as a separate fixture so
-# legacy-mapping tests degrade to a clean skip if this file isn't
-# present, without affecting the current-mapping tests.
-LEGACY_BASE_FILE_PATH = PROJECT_ROOT / "الاخوه.xlsx"
+# The external/secondary-file sample: holding-level "approved
+# holdings" report, no border data, matches external_file_default.yaml.
+SECONDARY_FILE_PATH = PROJECT_ROOT / "م الاخوة.xlsx"
 
-SECONDARY_FILE_PATH = PROJECT_ROOT / "حصر الصيفي2026 جديد  اول.xlsx"
+# The older seasonal-survey secondary-file sample (matches
+# seasonal_survey_default.yaml). Kept as a separate fixture so its
+# tests degrade to a clean skip if this file isn't present locally.
+SEASONAL_SECONDARY_FILE_PATH = PROJECT_ROOT / "حصر الصيفي2026 جديد  اول.xlsx"
 
 
 def _skip_if_missing(path: Path) -> None:
@@ -38,15 +39,15 @@ def base_file_path() -> Path:
 
 
 @pytest.fixture
-def legacy_base_file_path() -> Path:
-    _skip_if_missing(LEGACY_BASE_FILE_PATH)
-    return LEGACY_BASE_FILE_PATH
-
-
-@pytest.fixture
 def secondary_file_path() -> Path:
     _skip_if_missing(SECONDARY_FILE_PATH)
     return SECONDARY_FILE_PATH
+
+
+@pytest.fixture
+def seasonal_secondary_file_path() -> Path:
+    _skip_if_missing(SEASONAL_SECONDARY_FILE_PATH)
+    return SEASONAL_SECONDARY_FILE_PATH
 
 
 @pytest.fixture(scope="session")

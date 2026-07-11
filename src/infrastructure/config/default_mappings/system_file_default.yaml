@@ -1,42 +1,43 @@
 # config/column_mappings/system_file_default.yaml
-# Mapping for the current system-file export format, e.g. م الاخوة.xlsx
-# ("تقرير حيازات الجمعية المعتمدة حتى الآن" — approved-society holdings
-# report).
-#
-# This report is HOLDING-level, not parcel-level: there is no border
-# or رقم الأرض (land number) data anywhere in the file, and
-# المديرية/الإدارة/الجمعية are printed once near the top of the sheet
-# as report-level constants (e.g. row 12/14), not as per-row columns —
-# so they cannot be captured by a column mapping and are intentionally
-# left unmapped. Per §2.1, an unmapped field stays empty in the output;
-# it is never fabricated or guessed from the report banner.
+# Mapping for the base/system-file export format, e.g. مسجل_م الأخوة.xlsx
+# ("تقرير الحيازات الزراعية المسجلة" — registered agricultural holdings
+# report). Parcel-level: one row per land parcel, with its own
+# borders/basin/land-number data — this is what makes it suitable as
+# the base/system file, since spatial sorting depends on border data
+# that only this report format provides. The other report format
+# (e.g. م الاخوة.xlsx, "تقرير حيازات الجمعية المعتمدة") has no border
+# data at all, which is why it's the external/secondary mapping
+# instead (see external_file_default.yaml).
 #
 # Verified against the real sample file: single sheet
-# "AgricultureHoldingApprovedHoldi", header row 17, data starting row
-# 18, 928 data rows.
-#
-# The file has two distinct ID columns:
-#   - R "رقم الحيازة من واقع سجل 2 خدمات": short numeric values (e.g.
-#     "221") in exactly the same format as the secondary/external
-#     file's رقم حيازه 2022 join column — this is what actually lets
-#     rows match across the two files, so it's used as both the join
-#     key AND the output's رقم الحيازة column.
-#   - L "الرقم الموحد للحيازة": a longer compound registry code (e.g.
-#     "06-3230-00323003-000224"). Not part of the domain's 17-column
-#     output schema, so not mapped — confirmed with the user that only
-#     R is needed for now.
+# "AgricultureHoldingLandsReport", two-row header at rows 9-10, data
+# starting at row 11.
 
-name: "System File (Default) — Approved Holdings Report"
-description: "Mapping for م الاخوة.xlsx-style تقرير حيازات الجمعية المعتمدة exports."
+name: "System File (Default) — Lands Report"
+description: "Mapping for مسجل_م الأخوة.xlsx-style exports — fixed schema, two-row header."
 
-sheet_name: "AgricultureHoldingApprovedHoldi"
-data_starts_at_row: 18
+sheet_name: "AgricultureHoldingLandsReport"
+data_starts_at_row: 11
 
-join_key_column: "R"
+# The join key column — رقم الحيازة. Extracted directly from this
+# column regardless of which semantic field name (if any) also maps
+# to it, per Iteration 3's "join key comes from the mapping" rule.
+join_key_column: "N"
 
 fields:
-  فدان: "E"
-  قيراط: "I"
-  سهم: "J"
-  اسم_الحائز: "X"
-  الرقم_القومي: "V"
+  فدان: "A"
+  قيراط: "C"
+  سهم: "D"
+  رقم_الأرض: "E"
+  الحد_البحرى: "G"
+  الحد_الغربى: "H"
+  الحد_القبلى: "I"
+  الحد_الشرقى: "J"
+  رقم_الصفحة_بالسجل: "L"
+  رقم_الحيازة: "N"
+  اسم_الحائز: "O"
+  كود_الحوض: "Q"
+  اسم_الحوض: "S"
+  الجمعيه: "T"
+  الأداره: "U"
+  المديريه: "V"

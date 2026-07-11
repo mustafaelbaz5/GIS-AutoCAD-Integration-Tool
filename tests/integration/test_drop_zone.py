@@ -31,7 +31,7 @@ def test_accepts_a_valid_file_with_dimension_metadata_and_shows_row_count(
     zone._handle_selected_path(str(secondary_file_path))
 
     assert zone._status_label.text().startswith("✔")
-    assert "8082" in zone._status_label.text()
+    assert "946" in zone._status_label.text()
 
 
 def test_rejects_non_xlsx_extension(tmp_path: Path, qapp: QApplication) -> None:

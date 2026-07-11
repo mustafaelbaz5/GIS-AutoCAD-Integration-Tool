@@ -30,7 +30,7 @@ from src.shared.paths import get_app_root
 
 _DEFAULT_MAPPINGS_DIR = get_app_root() / "src" / "infrastructure" / "config" / "default_mappings"
 _DEFAULT_SYSTEM_MAPPING = _DEFAULT_MAPPINGS_DIR / "system_file_default.yaml"
-_DEFAULT_SUPPLEMENTARY_MAPPING = _DEFAULT_MAPPINGS_DIR / "seasonal_survey_default.yaml"
+_DEFAULT_SUPPLEMENTARY_MAPPING = _DEFAULT_MAPPINGS_DIR / "external_file_default.yaml"
 
 
 class MainViewModel(QObject):
