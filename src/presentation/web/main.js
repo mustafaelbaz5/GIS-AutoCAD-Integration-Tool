@@ -370,34 +370,49 @@ function applySelectedFile(slot, fileInfo) {
   render();
 }
 
+// Standard HTML5 DnD (dataTransfer.files[0].path) doesn't carry real
+// filesystem paths in WebView2/Chromium — browsers deliberately don't
+// expose that for security. pywebview has a separate, native
+// mechanism for this (see app_window.py's `_setup_drag_drop`, which
+// binds a Python-side document-level 'drop' handler that reads
+// `pywebviewFullPath` via WebView2's file-drop API and pushes the
+// resolved real path here as `onNativeFileDropped`). This file's job
+// is only to track *which drop-zone* is currently being hovered
+// (ordinary browser events, always accurate) so that push can be
+// routed to the right slot.
+let lastDragOverSlot = null;
+
 function wireDropZones() {
   document.querySelectorAll('[data-select-file]').forEach((button) => {
     button.addEventListener('click', () => onSelectFile(button.dataset.selectFile));
   });
   document.querySelectorAll('.drop-zone[data-slot]').forEach((zone) => {
-    zone.addEventListener('dragover', (event) => event.preventDefault());
-    zone.addEventListener('drop', async (event) => {
+    zone.addEventListener('dragover', (event) => {
       event.preventDefault();
-      const slot = zone.dataset.slot;
-      const files = event.dataTransfer.files;
-      if (!files || files.length === 0) {
-        return;
-      }
-      // pywebview exposes the real filesystem path via file.path; the
-      // browser File object alone doesn't carry one.
-      const filePath = files[0].path || files[0].name;
-      const result = await Bridge.call('handle_dropped_file', slot, filePath);
-      if (!result.ok) {
-        appendLog(result.error);
-        return;
-      }
-      if (!result.value.valid) {
-        appendLog(result.value.error);
-        return;
-      }
-      applySelectedFile(slot, result.value);
+      lastDragOverSlot = zone.dataset.slot;
     });
+    // preventDefault is still required here even though the actual
+    // file handling happens via the native onNativeFileDropped push —
+    // otherwise WebView2 navigates the whole window to the dropped file.
+    zone.addEventListener('drop', (event) => event.preventDefault());
   });
+}
+
+async function onNativeFileDropped(path) {
+  const slot = lastDragOverSlot;
+  if (!slot) {
+    return;
+  }
+  const result = await Bridge.call('handle_dropped_file', slot, path);
+  if (!result.ok) {
+    appendLog(result.error);
+    return;
+  }
+  if (!result.value.valid) {
+    appendLog(result.value.error);
+    return;
+  }
+  applySelectedFile(slot, result.value);
 }
 
 async function onStart() {
@@ -568,6 +583,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   Bridge.onPush('onMergeComplete', onMergeComplete);
   Bridge.onPush('onMergeFailed', onMergeFailed);
   Bridge.onPush('onLogMessage', onLogMessage);
+  Bridge.onPush('onNativeFileDropped', onNativeFileDropped);
   wireLogToggle();
   await Promise.all([loadAvailableMappings(), loadOutputDir()]);
   render();
