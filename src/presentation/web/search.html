@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>بحث في الحيازات</title>
+<link rel="stylesheet" href="shared/design-tokens.css"/>
+<style>
+  /*
+    No Stitch design exists yet for any of the 5 search screens
+    (06_search_empty through 10_search_no_file — see
+    resources/design/INVENTORY.md). Everything below is plain,
+    utilitarian styling using the shared design tokens so it doesn't
+    clash with the rest of the app, but it is NOT a reproduction of a
+    received screen. Re-style freely once those designs arrive — the
+    logic in search.js does not depend on any of this markup's exact
+    classes.
+  */
+  * { box-sizing: border-box; }
+  body {
+    background: var(--color-canvas-bg);
+    color: var(--color-on-background);
+    font-family: var(--font-body-md-family);
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    background: var(--color-surface-container-low);
+    border-bottom: 1px solid var(--color-outline-variant);
+    padding: var(--space-md) var(--space-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-md);
+  }
+  header h1 { font-size: var(--font-headline-md-size); margin: 0; }
+  header .file-info { font-size: var(--font-body-sm-size); color: var(--text-secondary); }
+  button.ghost {
+    background: transparent;
+    color: var(--color-primary);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-DEFAULT);
+    padding: var(--space-xs) var(--space-md);
+    font-family: var(--font-label-md-family);
+    font-size: var(--font-label-md-size);
+    cursor: pointer;
+  }
+  button.ghost:hover { background: var(--color-surface-container-high); }
+  main { flex: 1; overflow-y: auto; padding: var(--space-lg); }
+  .empty-state, .loading-state {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    color: var(--text-secondary);
+    text-align: center;
+  }
+  .search-box { position: relative; max-width: 480px; margin: 0 auto var(--space-lg); }
+  .search-box input {
+    width: 100%;
+    background: var(--color-surface-container-lowest);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-DEFAULT);
+    color: var(--color-on-surface);
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-body-md-size);
+  }
+  .search-box input:focus { outline: none; border-color: var(--color-primary); }
+  #dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    background: var(--color-card-surface);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-DEFAULT);
+    margin-top: var(--space-xs);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  #dropdown.hidden { display: none; }
+  .dropdown-item { padding: var(--space-sm) var(--space-md); cursor: pointer; }
+  .dropdown-item.highlighted, .dropdown-item:hover { background: var(--color-surface-container-high); }
+  .dropdown-item .name { color: var(--color-on-surface); }
+  .dropdown-item .id { color: var(--text-secondary); font-family: monospace; margin-inline-start: var(--space-sm); }
+  .sub-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-card-surface);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-DEFAULT);
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-sm);
+    cursor: pointer;
+  }
+  .sub-list-item:hover { background: var(--color-surface-container-high); }
+  .detail-wrapper { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-lg); }
+  .info-card {
+    background: var(--color-card-surface);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm) var(--space-lg);
+  }
+  .info-card .field-label { color: var(--text-secondary); font-size: var(--font-label-sm-size); }
+  .info-card .field-value { color: var(--color-on-surface); }
+  .compass {
+    direction: ltr; /* physical east=right/west=left regardless of RTL document direction */
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: var(--space-sm);
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .compass-cell {
+    background: var(--color-card-surface);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-DEFAULT);
+    padding: var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    text-align: center;
+  }
+  .compass-cell .label { font-size: var(--font-label-sm-size); color: var(--text-secondary); }
+  .compass-cell .value { direction: rtl; font-size: var(--font-body-sm-size); color: var(--color-on-surface); }
+  .compass-cell.navigable { cursor: pointer; border-color: var(--color-primary); }
+  .compass-cell.navigable:hover { background: var(--color-surface-container-high); }
+  .compass-cell.center { background: var(--color-surface-container-low); font-weight: bold; }
+  .actions-row { display: flex; gap: var(--space-sm); justify-content: center; }
+  button.primary {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border: none;
+    border-radius: var(--radius-DEFAULT);
+    padding: var(--space-sm) var(--space-lg);
+    font-family: var(--font-label-md-family);
+    cursor: pointer;
+  }
+  #toast {
+    position: fixed;
+    bottom: var(--space-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-success);
+    color: white;
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-DEFAULT);
+    font-size: var(--font-body-sm-size);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  #toast.visible { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>بحث في الحيازات</h1>
+  <div style="display:flex; align-items:center; gap: var(--space-md);">
+    <span id="file-info" class="file-info"></span>
+    <button id="btn-open-file" class="ghost">📂 فتح ملف مختلف</button>
+  </div>
+</header>
+<main id="main-content"></main>
+<div id="toast"></div>
+<script src="shared/bridge.js"></script>
+<script src="search.js" defer></script>
+</body>
+</html>

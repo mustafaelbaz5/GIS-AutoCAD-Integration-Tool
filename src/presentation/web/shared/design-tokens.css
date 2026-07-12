@@ -1,0 +1,254 @@
+/*
+ * Design tokens extracted from the Stitch export
+ * (resources/design/stitch_exports/{01_empty_state,02_files_loaded,03_processing,04_stats_panel}/code.html)
+ * and resources/design/design_system/DESIGN.md.
+ *
+ * Every value below is byte-identical across all 4 received screens'
+ * inline <script id="tailwind-config"> blocks and <style> blocks — there
+ * was no cross-screen drift to resolve. Two notes on sourcing:
+ *
+ * 1. The --color-* custom properties below use the exact names and hex
+ *    values from each screen's tailwind.config theme.extend.colors
+ *    object. DESIGN.md's prose sections ("Colors", "Elevation & Depth",
+ *    "Components") describe a *different* simpler palette (e.g.
+ *    background #0f172a / surface #1e293b / border #334155 / accent
+ *    #3b82f6), which doesn't match its own YAML frontmatter (background:
+ *    '#10131a', surface: '#10131a', etc.). The actual code.html markup —
+ *    confirmed identical across all 4 screens and matching the
+ *    screenshots — uses BOTH: the YAML/tailwind-config token names for
+ *    chrome (nav bar, buttons, stat cards) AND the prose-described hex
+ *    values as Tailwind arbitrary values (`bg-[#0f172a]`, `bg-[#1e293b]`,
+ *    etc.) for the main canvas, big cards, and drop-zones. Since this is
+ *    what's consistently shipped and pixel-verified in the screenshots
+ *    (not a real cross-screen inconsistency), both sets are captured
+ *    here rather than blocking on it — see the "Canvas & card surfaces"
+ *    section below for the second set.
+ *
+ * 2. borderRadius in DESIGN.md's frontmatter (sm/DEFAULT/md/lg/xl/full =
+ *    0.25/0.5/0.75/1/1.5rem/9999px) does not match the actual
+ *    tailwind.config borderRadius used in code.html (DEFAULT/lg/xl/full =
+ *    0.25/0.5/0.75rem/9999px, no separate sm or md). The code.html value
+ *    is used here, again because it's what's actually shipped.
+ */
+
+/* ---- Fonts (see ./fonts/) ---- */
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/bevietnampro-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/bevietnampro-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/bevietnampro-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/geist-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/geist-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('./fonts/material-symbols-outlined.woff2') format('woff2');
+}
+
+/*
+ * Neither Be Vietnam Pro nor Geist contains Arabic glyphs. In the
+ * received Stitch exports, Arabic text (the overwhelming majority of
+ * this app's UI) silently falls back to the browser/OS's default
+ * sans-serif — that's genuinely what the screenshots show, not an
+ * oversight on our part. The `sans-serif` fallback below reproduces
+ * that behavior. Per the brief's RTL rule (§2), verify in Task G that
+ * WebView2's fallback matches Stitch's own preview closely enough —
+ * flag it there if it doesn't, don't silently swap in Cairo/Tajawal
+ * now, since that would be "improving" on the received design.
+ */
+
+:root {
+  /* ---- Chrome tokens (nav bar, buttons, stat cards, borders) ----
+     Names and values copied verbatim from tailwind.config.theme.extend.colors. */
+  --color-on-background: #e1e2ec;
+  --color-surface-container: #1d2027;
+  --color-surface-container-low: #191b23;
+  --color-secondary-fixed-dim: #b9c8de;
+  --color-tertiary-container: #df7412;
+  --color-on-surface-variant: #c2c6d6;
+  --color-surface-bright: #363941;
+  --color-on-primary-container: #00285d;
+  --color-surface-dim: #10131a;
+  --color-on-tertiary-fixed: #311400;
+  --color-on-tertiary: #502400;
+  --color-primary-fixed-dim: #adc6ff;
+  --color-surface-container-lowest: #0b0e15;
+  --color-primary-fixed: #d8e2ff;
+  --color-on-secondary-container: #a7b6cc;
+  --color-on-secondary-fixed: #0d1c2d;
+  --color-on-primary-fixed-variant: #004395;
+  --color-on-error: #690005;
+  --color-surface-container-highest: #32353c;
+  --color-on-secondary-fixed-variant: #39485a;
+  --color-on-primary: #002e6a;
+  --color-error-container: #93000a;
+  --color-surface-tint: #adc6ff;
+  --color-secondary-fixed: #d4e4fa;
+  --color-outline: #8c909f;
+  --color-primary: #adc6ff;
+  --color-tertiary-fixed-dim: #ffb786;
+  --color-secondary: #b9c8de;
+  --color-inverse-surface: #e1e2ec;
+  --color-primary-container: #4d8eff;
+  --color-error: #ffb4ab;
+  --color-on-surface: #e1e2ec;
+  --color-tertiary: #ffb786;
+  --color-on-secondary: #233143;
+  --color-surface: #10131a;
+  --color-on-primary-fixed: #001a42;
+  --color-inverse-primary: #005ac2;
+  --color-tertiary-fixed: #ffdcc6;
+  --color-surface-container-high: #272a31;
+  --color-on-tertiary-fixed-variant: #723600;
+  --color-background: #10131a;
+  --color-on-tertiary-container: #461f00;
+  --color-outline-variant: #424754;
+  --color-on-error-container: #ffdad6;
+  --color-secondary-container: #39485a;
+  --color-inverse-on-surface: #2e3038;
+  --color-surface-variant: #32353c;
+
+  /* ---- Canvas & card surfaces ---- (see note 1 above) */
+  --color-canvas-bg: #0f172a;
+  --color-card-surface: #1e293b;
+  --color-card-border: #334155;
+  --color-dropzone-border: #475569;
+  --color-accent-hover: #3b82f6;
+
+  /* ---- Semantic aliases, derived from actual usage in the received
+     screens (not invented): success = Tailwind's built-in green-500
+     (used for the "merge succeeded" banner and file-loaded checkmarks —
+     note this is NOT part of the M3 token set above, Stitch used
+     Tailwind's default green here); warning = --color-tertiary (used
+     for "بيانات ناقصة" / incomplete-data counts); danger = --color-error
+     (used for the cancel/إلغاء button and "مسح النتائج" hover). ---- */
+  --color-success: #22c55e;
+  --color-warning: var(--color-tertiary);
+  --color-danger: var(--color-error);
+
+  /* ---- Text ---- */
+  --text-primary: var(--color-on-surface);
+  --text-secondary: var(--color-on-surface-variant);
+
+  /* ---- Radius ---- (tailwind.config.theme.extend.borderRadius) */
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* ---- Spacing ---- (tailwind.config.theme.extend.spacing) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-gutter: 20px;
+  --space-margin: 40px;
+
+  /* ---- Typography ---- (tailwind.config.theme.extend.fontFamily / fontSize) */
+  --font-headline-xl-family: 'Be Vietnam Pro', sans-serif;
+  --font-headline-xl-size: 32px;
+  --font-headline-xl-line-height: 48px;
+  --font-headline-xl-letter-spacing: -0.02em;
+  --font-headline-xl-weight: 700;
+
+  --font-headline-lg-family: 'Be Vietnam Pro', sans-serif;
+  --font-headline-lg-size: 24px;
+  --font-headline-lg-line-height: 36px;
+  --font-headline-lg-weight: 600;
+
+  --font-headline-md-family: 'Be Vietnam Pro', sans-serif;
+  --font-headline-md-size: 20px;
+  --font-headline-md-line-height: 32px;
+  --font-headline-md-weight: 600;
+
+  --font-body-lg-family: 'Be Vietnam Pro', sans-serif;
+  --font-body-lg-size: 18px;
+  --font-body-lg-line-height: 32px;
+  --font-body-lg-weight: 400;
+
+  --font-body-md-family: 'Be Vietnam Pro', sans-serif;
+  --font-body-md-size: 16px;
+  --font-body-md-line-height: 28px;
+  --font-body-md-weight: 400;
+
+  --font-body-sm-family: 'Be Vietnam Pro', sans-serif;
+  --font-body-sm-size: 14px;
+  --font-body-sm-line-height: 24px;
+  --font-body-sm-weight: 400;
+
+  --font-label-md-family: 'Geist', sans-serif;
+  --font-label-md-size: 13px;
+  --font-label-md-line-height: 16px;
+  --font-label-md-letter-spacing: 0.05em;
+  --font-label-md-weight: 500;
+
+  --font-label-sm-family: 'Geist', sans-serif;
+  --font-label-sm-size: 11px;
+  --font-label-sm-line-height: 14px;
+  --font-label-sm-letter-spacing: 0.08em;
+  --font-label-sm-weight: 600;
+
+  /* Convenience aliases matching the brief's §7.2 example names */
+  --font-body-size: var(--font-body-md-size);
+  --font-header-size: var(--font-headline-lg-size);
+  --radius-md: var(--radius-lg);
+}
+
+body {
+  font-family: var(--font-body-md-family);
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ---- Shared component classes (copied verbatim from every screen's <style> block) ---- */
+
+.drop-zone {
+  transition: all 0.2s ease-in-out;
+}
+.drop-zone:hover {
+  border-color: var(--color-accent-hover);
+  background-color: rgba(77, 142, 255, 0.05);
+}
+
+.border-dashed-custom {
+  border: 2px dashed var(--color-dropzone-border);
+}
+
+.elevation-card {
+  border: 1px solid var(--color-card-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}

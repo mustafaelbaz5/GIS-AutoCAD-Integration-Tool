@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>أداة معالجة بيانات الحيازات الزراعية</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#e1e2ec",
+                        "surface-container": "#1d2027",
+                        "surface-container-low": "#191b23",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "tertiary-container": "#df7412",
+                        "on-surface-variant": "#c2c6d6",
+                        "surface-bright": "#363941",
+                        "on-primary-container": "#00285d",
+                        "surface-dim": "#10131a",
+                        "on-tertiary-fixed": "#311400",
+                        "on-tertiary": "#502400",
+                        "primary-fixed-dim": "#adc6ff",
+                        "surface-container-lowest": "#0b0e15",
+                        "primary-fixed": "#d8e2ff",
+                        "on-secondary-container": "#a7b6cc",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "on-primary-fixed-variant": "#004395",
+                        "on-error": "#690005",
+                        "surface-container-highest": "#32353c",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "on-primary": "#002e6a",
+                        "error-container": "#93000a",
+                        "surface-tint": "#adc6ff",
+                        "secondary-fixed": "#d4e4fa",
+                        "outline": "#8c909f",
+                        "primary": "#adc6ff",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "secondary": "#b9c8de",
+                        "inverse-surface": "#e1e2ec",
+                        "primary-container": "#4d8eff",
+                        "error": "#ffb4ab",
+                        "on-surface": "#e1e2ec",
+                        "tertiary": "#ffb786",
+                        "on-secondary": "#233143",
+                        "surface": "#10131a",
+                        "on-primary-fixed": "#001a42",
+                        "inverse-primary": "#005ac2",
+                        "tertiary-fixed": "#ffdcc6",
+                        "surface-container-high": "#272a31",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "background": "#10131a",
+                        "on-tertiary-container": "#461f00",
+                        "outline-variant": "#424754",
+                        "on-error-container": "#ffdad6",
+                        "secondary-container": "#39485a",
+                        "inverse-on-surface": "#2e3038",
+                        "surface-variant": "#32353c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "gutter": "20px",
+                        "margin": "40px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["beVietnamPro", "sans-serif"],
+                        "label-md": ["geist", "sans-serif"],
+                        "headline-xl": ["beVietnamPro", "sans-serif"],
+                        "body-lg": ["beVietnamPro", "sans-serif"],
+                        "body-sm": ["beVietnamPro", "sans-serif"],
+                        "body-md": ["beVietnamPro", "sans-serif"],
+                        "label-sm": ["geist", "sans-serif"],
+                        "headline-md": ["beVietnamPro", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["24px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-xl": ["32px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "32px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@500;600&display=swap');
+        
+        body {
+            font-family: 'beVietnamPro', sans-serif;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Dropzone hover effects */
+        .drop-zone {
+            transition: all 0.2s ease-in-out;
+        }
+        .drop-zone:hover {
+            border-color: #3b82f6; /* Equivalent to primary blue conceptually, though using strict tokens below */
+            background-color: rgba(77, 142, 255, 0.05); /* primary-container with opacity */
+        }
+        
+        /* Dashed border for drop zones matching style guide */
+        .border-dashed-custom {
+            border: 2px dashed #475569;
+        }
+        
+        /* Subtle elevation for cards */
+        .elevation-card {
+            border: 1px solid #334155;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background h-screen flex flex-col overflow-hidden">
+<!-- TopNavBar (Derived from JSON) -->
+<nav class="bg-surface-container-low dark:bg-surface-container-low border-b border-outline-variant dark:border-outline-variant flex flex-row-reverse justify-between items-center px-gutter w-full h-16 shrink-0 z-10 relative">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-2xl mr-2">agriculture</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">أداة معالجة بيانات الحيازات الزراعية</span>
+</div>
+<div class="flex flex-row-reverse items-center gap-xl h-full">
+<!-- Active Navigation -->
+<div class="flex flex-row-reverse items-center gap-md h-full">
+<a class="h-full flex items-center px-sm text-primary font-bold border-b-2 border-primary pb-1 active:scale-95 duration-150 hover:bg-surface-container-highest transition-colors" href="#">
+            ملف
+        </a>
+<a class="h-full flex items-center px-sm text-on-surface-variant font-medium active:scale-95 duration-150 hover:bg-surface-container-highest transition-colors" href="#">
+            مساعدة
+        </a>
+</div>
+<!-- Actions Bar -->
+<div class="flex flex-row-reverse items-center gap-sm">
+<button class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-secondary-container text-on-secondary-container hover:bg-surface-container-highest active:scale-95 transition-all border border-outline-variant"><span class="material-symbols-outlined text-[18px]">play_arrow</span>تشغيل</button>
+<button class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-surface-container-highest text-on-surface hover:bg-surface-variant active:scale-95 transition-all border border-outline-variant"><span class="material-symbols-outlined text-[18px]">delete</span>مسح</button>
+<button class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-primary text-on-primary hover:bg-primary/90 active:scale-95 transition-all shadow-lg shadow-primary/20 relative"><span class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-surface-container-low"></span><span class="material-symbols-outlined text-[18px]">search</span>بحث</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto p-margin flex flex-col gap-lg items-center justify-center bg-[#0f172a] relative">
+<!-- Optional Watermark/Background subtle grain could go here -->
+<!-- Drop Zones Container (Bento-style layout suggestion) -->
+<div class="w-full max-w-5xl bg-green-500/10 border border-green-500/30 rounded-lg p-md flex flex-row-reverse justify-between items-center"><div class="flex items-center gap-md"><div class="bg-green-500 rounded-full p-1 flex items-center justify-center"><span class="material-symbols-outlined text-white text-[20px] font-bold">check</span></div><span class="font-headline-md text-on-surface">تم دمج 2930 حيازة بنجاح</span></div><button class="font-label-md text-label-md text-primary hover:text-primary/80 transition-colors flex items-center gap-xs">معالجة ملف جديد<span class="material-symbols-outlined text-[18px]">add</span></button></div>
+<!-- Output Path & Advanced Settings Container -->
+<div class="w-full max-w-5xl grid grid-cols-2 md:grid-cols-5 gap-md rtl"><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">إجمالي الحيازات المدمجة</span><span class="text-headline-md text-on-surface">2930</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">بيانات كاملة</span><span class="text-headline-md text-green-500">2104</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">بيانات ناقصة</span><span class="text-headline-md text-tertiary">826</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">مع رقم قومي</span><span class="text-headline-md text-on-surface">2650</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">بدون رقم قومي</span><span class="text-headline-md text-on-surface">280</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">صفوف «لاغى» مستبعدة</span><span class="text-headline-md text-on-surface-variant">1247</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">إجمالي المساحة</span><span class="text-headline-md text-on-surface">6,214.2 فدان</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">عدد الأحواض</span><span class="text-headline-md text-on-surface">40</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">قطع لم يُحدَّد ترتيبها</span><span class="text-headline-md text-tertiary">1972</span></div><div class="bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-col gap-xs"><span class="text-on-surface-variant text-label-sm">زمن المعالجة</span><span class="text-headline-md text-primary">12.4 ثانية</span></div><div class="col-span-2 md:col-span-5 bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-row-reverse justify-between items-center"><span class="text-on-surface-variant text-label-sm">أكبر 3 أحواض:</span><div class="flex gap-lg"><span class="text-body-md text-on-surface">الشيكاره (214)</span><span class="text-body-md text-on-surface">الابيار (169)</span><span class="text-body-md text-on-surface">الكراكي (175)</span></div></div></div><div class="w-full max-w-5xl flex flex-col gap-md">
+<!-- Output Path Row -->
+<div class="bg-[#1e293b] elevation-card rounded-lg p-md flex flex-row-reverse justify-between items-center w-full">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant">folder</span>
+<span class="font-body-md text-body-md text-on-surface-variant">مكان الحفظ:</span>
+<code class="font-mono text-sm bg-surface-container-lowest px-sm py-1 rounded text-primary-fixed-dim" dir="ltr">C:\Users\Admin\Desktop\GIS_Output</code>
+</div>
+<div class="flex gap-sm"><button class="font-label-md text-label-md text-on-surface border border-outline-variant hover:bg-surface-container-high px-md py-sm rounded transition-colors flex items-center gap-xs"><span class="material-symbols-outlined text-[18px]">folder_open</span>فتح المجلد</button><button class="font-label-md text-label-md text-on-surface-variant/70 hover:text-error transition-colors flex items-center gap-xs px-sm">مسح النتائج<span class="material-symbols-outlined text-[18px]">delete_sweep</span></button></div>
+</div>
+<!-- Advanced Settings Toggle -->
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-on-surface transition-colors w-fit font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+                الإعدادات المتقدمة
+                <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+</main>
+<!-- Footer Area -->
+<footer class="bg-surface-container border-t border-outline-variant dark:border-outline-variant p-md flex flex-col items-center justify-center relative shrink-0 z-20 h-16">
+<!-- Log Toggle -->
+<button class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 bg-[#1e293b] border border-outline-variant px-md py-xs rounded-t-lg font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors flex items-center gap-xs hover:bg-surface-container-highest">
+<span class="material-symbols-outlined text-[14px]">receipt_long</span>
+            عرض سجل العمليات
+            <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
+</button>
+</footer>
+</body></html>
