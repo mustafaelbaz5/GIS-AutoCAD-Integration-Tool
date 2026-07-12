@@ -10,6 +10,8 @@ from pathlib import Path
 _SETTINGS_DIR = Path.home() / ".gis_autocad_tool"
 _SETTINGS_FILE = _SETTINGS_DIR / "app_settings.json"
 
+DEFAULT_OUTPUT_DIR = Path.home() / "Desktop" / "GIS_Output"
+
 
 def load_last_output_dir() -> Path | None:
     """Return the last-used output folder, or None if never saved/unreadable."""
