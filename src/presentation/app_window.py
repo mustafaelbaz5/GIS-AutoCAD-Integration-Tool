@@ -1,10 +1,4 @@
-"""pywebview window bootstrap for the main window.
-
-Replaces `views/main_window.py` (PySide6) per Iteration 4. The old
-PySide6 presentation modules are left in place, untouched, until Task
-D/E fully replace their functionality — deleting them now would strand
-in-progress work without a working replacement yet.
-"""
+"""pywebview window bootstrap for the main window, per Iteration 4."""
 
 import webview
 
@@ -30,6 +24,7 @@ def create_main_window(api: MainApi) -> webview.Window:
         width=1440,
         height=960,
         min_size=(1024, 720),
+        text_select=True,  # pywebview disables text selection by default
     )
     if window is None:
         raise RuntimeError("webview.create_window() failed to create the main window")

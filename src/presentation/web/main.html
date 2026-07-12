@@ -100,7 +100,7 @@
         }
     </script>
 </head>
-<body class="bg-background text-on-background h-screen flex flex-col overflow-hidden">
+<body class="bg-background text-on-background min-h-screen flex flex-col overflow-y-auto">
 <!-- TopNavBar (Derived from JSON) -->
 <nav class="bg-surface-container-low dark:bg-surface-container-low border-b border-outline-variant dark:border-outline-variant flex flex-row-reverse justify-between items-center px-gutter w-full h-16 shrink-0 z-10 relative">
 <div class="flex items-center gap-xs">
@@ -128,7 +128,14 @@
      No dedicated Stitch design for the expanded panel itself exists,
      only the collapsed toggle button (present on every received
      screen) — so the panel body below is plain/utilitarian. -->
-<div id="log-panel" class="hidden max-h-40 overflow-y-auto bg-surface-container-lowest border-t border-outline-variant px-gutter py-sm text-body-sm font-mono text-on-surface-variant shrink-0" dir="ltr"></div>
+<div id="log-panel" class="hidden max-h-40 overflow-y-auto bg-surface-container-lowest border-t border-outline-variant shrink-0" dir="ltr">
+<div class="flex justify-end sticky top-0 bg-surface-container-lowest px-gutter pt-sm">
+<button id="btn-copy-log" class="font-label-sm text-label-sm text-primary hover:text-primary/80 flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>نسخ السجل
+</button>
+</div>
+<div id="log-panel-content" class="px-gutter pb-sm text-body-sm font-mono text-on-surface-variant select-text" style="user-select: text; cursor: text;"></div>
+</div>
 <!-- Footer Area -->
 <footer class="bg-surface-container border-t border-outline-variant dark:border-outline-variant p-md flex flex-col items-center justify-center relative shrink-0 z-20 h-16">
 <!-- Log Toggle -->

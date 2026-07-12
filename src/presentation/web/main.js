@@ -276,6 +276,7 @@ function mainContentResults() {
           <code class="font-mono text-sm bg-surface-container-lowest px-sm py-1 rounded text-primary-fixed-dim" dir="ltr">${State.outputDir}</code>
         </div>
         <div class="flex gap-sm">
+          <button data-action="open-file" class="font-label-md text-label-md text-on-primary bg-primary hover:bg-primary/90 px-md py-sm rounded transition-colors flex items-center gap-xs"><span class="material-symbols-outlined text-[18px]">description</span>فتح الملف</button>
           <button data-action="open-folder" class="font-label-md text-label-md text-on-surface border border-outline-variant hover:bg-surface-container-high px-md py-sm rounded transition-colors flex items-center gap-xs"><span class="material-symbols-outlined text-[18px]">folder_open</span>فتح المجلد</button>
           <button data-action="clear-results" class="font-label-md text-label-md text-on-surface-variant/70 hover:text-error transition-colors flex items-center gap-xs px-sm">مسح النتائج<span class="material-symbols-outlined text-[18px]">delete_sweep</span></button>
         </div>
@@ -310,12 +311,13 @@ function render() {
 
 function appendLog(text) {
   State.logEntries.push(text);
-  const el = document.getElementById('log-panel');
-  if (el) {
+  const content = document.getElementById('log-panel-content');
+  if (content) {
     const line = document.createElement('div');
     line.textContent = text;
-    el.appendChild(line);
-    el.scrollTop = el.scrollHeight;
+    content.appendChild(line);
+    const panel = document.getElementById('log-panel');
+    panel.scrollTop = panel.scrollHeight;
   }
 }
 
@@ -324,6 +326,16 @@ function wireLogToggle() {
   const panel = document.getElementById('log-panel');
   button.addEventListener('click', () => {
     panel.classList.toggle('hidden');
+  });
+
+  const copyButton = document.getElementById('btn-copy-log');
+  copyButton.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(State.logEntries.join('\n'));
+    const original = copyButton.innerHTML;
+    copyButton.innerHTML = '<span class="material-symbols-outlined text-[14px]">check</span>تم النسخ';
+    setTimeout(() => {
+      copyButton.innerHTML = original;
+    }, 1200);
   });
 }
 
@@ -442,6 +454,10 @@ async function onOpenFolder() {
   await Bridge.call('open_output_folder');
 }
 
+async function onOpenFile() {
+  await Bridge.call('open_output_file');
+}
+
 function onToggleAdvanced() {
   State.advancedSettingsOpen = !State.advancedSettingsOpen;
   render();
@@ -480,6 +496,7 @@ document.addEventListener('click', (event) => {
     'remove-file': () => onRemoveFile(button.dataset.slot),
     'change-output': onChangeOutput,
     'open-folder': onOpenFolder,
+    'open-file': onOpenFile,
     'toggle-advanced': onToggleAdvanced,
     cancel: onCancel,
     'new-file': onNewFile,

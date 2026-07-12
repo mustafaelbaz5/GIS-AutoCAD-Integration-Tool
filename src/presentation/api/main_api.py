@@ -305,6 +305,12 @@ class MainApi:
         if self._output_dir.exists():
             os.startfile(self._output_dir)  # noqa: S606 -- Windows-only by design (project brief)
 
+    def open_output_file(self) -> None:
+        """Open the most recently generated output file directly (e.g. in Excel)."""
+        logger.info("open_output_file called")
+        if self._last_output_path is not None and self._last_output_path.exists():
+            os.startfile(self._last_output_path)  # noqa: S606 -- Windows-only by design
+
     def _push_event(self, js_function: str, payload: dict[str, Any]) -> None:
         """Push data to JS by calling a `window.<js_function>(payload)`.
 

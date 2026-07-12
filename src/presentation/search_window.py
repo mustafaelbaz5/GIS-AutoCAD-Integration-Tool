@@ -41,6 +41,7 @@ def create_search_window(
         width=900,
         height=700,
         min_size=(600, 400),
+        text_select=True,  # pywebview disables text selection by default
     )
     if window is None:
         raise RuntimeError("webview.create_window() failed to create the search window")
