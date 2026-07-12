@@ -23,6 +23,16 @@ def main() -> None:
     search_window: webview.Window | None = None
     search_api: SearchApi | None = None
 
+    def on_search_window_closed() -> None:
+        # The user closed the search window via its native close button.
+        # pywebview destroys the underlying OS window at that point, so
+        # the stale references must be cleared here — otherwise every
+        # later "بحث" click would call show()/evaluate_js() on a dead
+        # window object and silently do nothing.
+        nonlocal search_window, search_api
+        search_window = None
+        search_api = None
+
     def open_search_window(last_output_path: Path | None) -> None:
         nonlocal search_window, search_api
         if search_window is not None and search_api is not None:
@@ -32,6 +42,7 @@ def main() -> None:
             search_window.show()
             return
         search_window, search_api = create_search_window(last_output_path)
+        search_window.events.closed += on_search_window_closed
 
     main_api = MainApi(open_search_window=open_search_window)
     create_main_window(main_api)

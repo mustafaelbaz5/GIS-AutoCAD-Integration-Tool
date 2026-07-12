@@ -94,7 +94,7 @@ class MainApi:
         """Open a native file picker for the given drop-zone slot.
 
         `slot` is `"base"` or `"secondary"`, matching the two drop
-        zones (ملف المنظومة / الملف الخارجي).
+        zones (الملف المسجل / الملف المعتمد).
         """
         logger.info(f"select_file called for slot={slot!r}")
         if self._window is None:

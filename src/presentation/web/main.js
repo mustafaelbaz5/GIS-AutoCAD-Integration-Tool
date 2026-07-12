@@ -41,7 +41,7 @@ function navActionsEmpty() {
     <button data-action="clear" class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-transparent text-on-surface-variant/50 border border-outline-variant/30 opacity-70 cursor-not-allowed" disabled>
       <span class="material-symbols-outlined text-[18px]">delete</span>مسح
     </button>
-    <button data-action="search" class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-transparent text-on-surface-variant/50 border border-outline-variant/30 opacity-70 cursor-not-allowed" disabled>
+    <button data-action="search" class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-surface-container-highest text-on-surface hover:bg-surface-variant active:scale-95 transition-all border border-outline-variant">
       <span class="material-symbols-outlined text-[18px]">search</span>بحث
     </button>`;
 }
@@ -59,7 +59,7 @@ function navActionsFilesLoaded() {
     <button data-action="clear" class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-surface-container-highest text-on-surface hover:bg-surface-variant active:scale-95 transition-all border border-outline-variant">
       <span class="material-symbols-outlined text-[18px]">delete</span>مسح
     </button>
-    <button data-action="search" class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-transparent text-on-surface-variant/50 border border-outline-variant/30 opacity-70 cursor-not-allowed" disabled>
+    <button data-action="search" class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-surface-container-highest text-on-surface hover:bg-surface-variant active:scale-95 transition-all border border-outline-variant">
       <span class="material-symbols-outlined text-[18px]">search</span>بحث
     </button>`;
 }
@@ -72,7 +72,7 @@ function navActionsProcessing() {
     <button class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-surface-container-highest text-on-surface hover:bg-surface-variant active:scale-95 transition-all border border-outline-variant opacity-50 cursor-not-allowed" disabled>
       <span class="material-symbols-outlined text-[18px]">delete</span>مسح
     </button>
-    <button class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-transparent text-on-surface-variant/50 border border-outline-variant/30 opacity-70 cursor-not-allowed" disabled>
+    <button data-action="search" class="flex items-center gap-xs px-md py-sm rounded font-label-md text-label-md bg-surface-container-highest text-on-surface hover:bg-surface-variant active:scale-95 transition-all border border-outline-variant">
       <span class="material-symbols-outlined text-[18px]">search</span>بحث
     </button>`;
 }
@@ -168,7 +168,7 @@ function advancedSettingsPanel() {
   return `
     <div class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg p-md flex flex-col gap-md text-body-sm">
       <label class="flex items-center justify-between gap-md">
-        <span class="text-on-surface-variant">تعيين الملف الخارجي</span>
+        <span class="text-on-surface-variant">تعيين الملف المعتمد</span>
         <select data-action="secondary-mapping" class="bg-surface-container-lowest border border-outline-variant rounded px-sm py-1 text-on-surface">${mappingOptions}</select>
       </label>
       <label class="flex items-center justify-between gap-md">
@@ -185,8 +185,8 @@ function advancedSettingsPanel() {
 function mainContentEmpty() {
   return `
     <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-lg rtl">
-      ${dropZoneEmpty('secondary', 'description', 'الملف الخارجي')}
-      ${dropZoneEmpty('base', 'folder_open', 'ملف المنظومة')}
+      ${dropZoneEmpty('secondary', 'description', 'الملف المعتمد')}
+      ${dropZoneEmpty('base', 'folder_open', 'الملف المسجل')}
     </div>
     <div class="w-full max-w-5xl flex flex-col gap-md">
       ${outputPathRow()}
@@ -197,8 +197,8 @@ function mainContentEmpty() {
 function mainContentFilesLoaded() {
   return `
     <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-lg rtl">
-      ${State.secondary ? dropZoneLoaded('secondary', State.secondary) : dropZoneEmpty('secondary', 'description', 'الملف الخارجي')}
-      ${State.base ? dropZoneLoaded('base', State.base) : dropZoneEmpty('base', 'folder_open', 'ملف المنظومة')}
+      ${State.secondary ? dropZoneLoaded('secondary', State.secondary) : dropZoneEmpty('secondary', 'description', 'الملف المعتمد')}
+      ${State.base ? dropZoneLoaded('base', State.base) : dropZoneEmpty('base', 'folder_open', 'الملف المسجل')}
     </div>
     <div class="w-full max-w-5xl flex flex-col gap-md">
       ${outputPathRow()}
