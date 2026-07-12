@@ -14,6 +14,7 @@ from src.infrastructure.excel.formatting_config import FormattingConfig
 from src.infrastructure.excel.output_schema import OUTPUT_COLUMNS
 from src.infrastructure.excel.professional_excel_writer import (
     ProfessionalExcelWriter,
+    build_output_filename,
     default_output_filename,
     resolve_unique_path,
 )
@@ -175,6 +176,117 @@ def test_output_file_reopens_without_error(tmp_path: Path) -> None:
 def test_default_output_filename_format() -> None:
     filename = default_output_filename(now=datetime(2026, 7, 11, 14, 30, 22))
     assert filename == "merged_output_2026-07-11_143022.xlsx"
+
+
+def test_build_output_filename_uses_society_name_before_first_dash() -> None:
+    filename = build_output_filename(
+        "ميت فضالة-الائتمان الزراعي", now=datetime(2026, 7, 12, 9, 0, 0)
+    )
+    assert filename == "ميت فضالة_كامل_2026-07-12.xlsx"
+
+
+def test_build_output_filename_uses_whole_name_when_no_dash() -> None:
+    filename = build_output_filename("ميت فضالة", now=datetime(2026, 7, 12, 9, 0, 0))
+    assert filename == "ميت فضالة_كامل_2026-07-12.xlsx"
+
+
+def test_build_output_filename_falls_back_when_society_name_missing() -> None:
+    filename = build_output_filename(None, now=datetime(2026, 7, 11, 14, 30, 22))
+    assert filename == default_output_filename(now=datetime(2026, 7, 11, 14, 30, 22))
+
+
+def test_build_output_filename_falls_back_when_society_name_blank() -> None:
+    filename = build_output_filename("   ", now=datetime(2026, 7, 11, 14, 30, 22))
+    assert filename == default_output_filename(now=datetime(2026, 7, 11, 14, 30, 22))
+
+
+def test_build_output_filename_strips_illegal_filesystem_characters() -> None:
+    filename = build_output_filename("ميت/فضالة:*?", now=datetime(2026, 7, 12, 9, 0, 0))
+    assert filename == "ميتفضالة_كامل_2026-07-12.xlsx"
+
+
+# --- Basin-split sheets -------------------------------------------------
+
+
+def test_writes_one_additional_sheet_per_distinct_basin(tmp_path: Path) -> None:
+    output_path = tmp_path / "output.xlsx"
+    parcels = [
+        make_parcel("1", basin_name="Basin A"),
+        make_parcel("2", basin_name="Basin B"),
+        make_parcel("3", basin_name="Basin A"),
+    ]
+    ProfessionalExcelWriter().write(parcels, output_path)
+
+    workbook = openpyxl.load_workbook(output_path)
+    assert set(workbook.sheetnames) == {"البيانات المجمعة", "Basin A", "Basin B"}
+
+
+def test_basin_sheet_contains_only_that_basins_rows(tmp_path: Path) -> None:
+    output_path = tmp_path / "output.xlsx"
+    parcels = [
+        make_parcel("1", basin_name="Basin A", holder_name="Holder A"),
+        make_parcel("2", basin_name="Basin B", holder_name="Holder B"),
+    ]
+    ProfessionalExcelWriter().write(parcels, output_path)
+
+    workbook = openpyxl.load_workbook(output_path)
+    basin_a_sheet = workbook["Basin A"]
+    holder_col = [c.header for c in OUTPUT_COLUMNS].index("اسم الحائز") + 1
+    holder_names = [
+        basin_a_sheet.cell(row=r, column=holder_col).value for r in range(2, basin_a_sheet.max_row)
+    ]
+    assert "Holder A" in holder_names
+    assert "Holder B" not in holder_names
+
+
+def test_basin_sheet_has_its_own_header_and_totals_row(tmp_path: Path) -> None:
+    output_path = tmp_path / "output.xlsx"
+    parcels = [make_parcel("1", basin_name="Basin A", feddan=2.0, qirat=0.0, sahm=0.0)]
+    ProfessionalExcelWriter().write(parcels, output_path)
+
+    workbook = openpyxl.load_workbook(output_path)
+    sheet = workbook["Basin A"]
+    assert sheet.cell(row=1, column=1).value == OUTPUT_COLUMNS[0].header
+    assert sheet.cell(row=3, column=1).value == "الإجمالي"
+
+
+def test_parcels_without_basin_name_grouped_under_no_basin_label(tmp_path: Path) -> None:
+    output_path = tmp_path / "output.xlsx"
+    parcels = [make_parcel("1", basin_name=None)]
+    ProfessionalExcelWriter().write(parcels, output_path)
+
+    workbook = openpyxl.load_workbook(output_path)
+    assert "بدون حوض" in workbook.sheetnames
+
+
+def test_main_sheet_still_contains_every_parcel_regardless_of_basin(tmp_path: Path) -> None:
+    output_path = tmp_path / "output.xlsx"
+    parcels = [
+        make_parcel("1", basin_name="Basin A"),
+        make_parcel("2", basin_name="Basin B"),
+    ]
+    ProfessionalExcelWriter().write(parcels, output_path)
+
+    workbook = openpyxl.load_workbook(output_path)
+    main_sheet = workbook["البيانات المجمعة"]
+    holding_id_values = [
+        main_sheet.cell(row=r, column=1).value
+        for r in range(2, main_sheet.max_row + 1)
+        if main_sheet.cell(row=r, column=1).value not in (None, "الإجمالي")
+    ]
+    assert set(holding_id_values) == {"1", "2"}
+
+
+def test_long_basin_names_are_truncated_to_valid_sheet_titles(tmp_path: Path) -> None:
+    output_path = tmp_path / "output.xlsx"
+    long_name = "حوض " * 10  # well over Excel's 31-char sheet title limit
+    parcels = [make_parcel("1", basin_name=long_name)]
+    ProfessionalExcelWriter().write(parcels, output_path)
+
+    workbook = openpyxl.load_workbook(output_path)
+    extra_sheets = [name for name in workbook.sheetnames if name != "البيانات المجمعة"]
+    assert len(extra_sheets) == 1
+    assert len(extra_sheets[0]) <= 31
 
 
 def test_header_and_body_font_sizes_per_config(tmp_path: Path) -> None:

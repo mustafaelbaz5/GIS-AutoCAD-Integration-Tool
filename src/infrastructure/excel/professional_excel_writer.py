@@ -30,6 +30,7 @@ _NUMBER_FORMAT = "0.00"
 _TEXT_FORMAT = "@"
 _TOTALS_LABEL = "الإجمالي"
 _SHEET_TITLE = "البيانات المجمعة"
+_NO_BASIN_LABEL = "بدون حوض"
 
 _NO_BASIN_YET: object = object()
 
@@ -38,6 +39,30 @@ def default_output_filename(now: datetime | None = None) -> str:
     """Return the timestamped default filename, per §8.1."""
     timestamp = (now or datetime.now()).strftime("%Y-%m-%d_%H%M%S")
     return f"merged_output_{timestamp}.xlsx"
+
+
+_FILENAME_SUFFIX = "كامل"
+_ILLEGAL_FILENAME_CHARS = '\\/:*?"<>|'
+
+
+def build_output_filename(society_name: str | None, now: datetime | None = None) -> str:
+    """Return the output filename, derived from the society name when available.
+
+    Per the user-specified convention: takes the part of `society_name`
+    before its first "-" (e.g. "ميت فضالة-الائتمان الزراعي" becomes
+    "ميت فضالة"), appends the fixed suffix "كامل" and today's date —
+    e.g. "ميت فضالة_كامل_2026-07-12.xlsx". Falls back to
+    `default_output_filename` when no society name is available (e.g.
+    the primary mapping doesn't declare a society column, or every row
+    in the file has one blank).
+    """
+    if society_name:
+        prefix = society_name.split("-", 1)[0].strip()
+        prefix = "".join(ch for ch in prefix if ch not in _ILLEGAL_FILENAME_CHARS).strip()
+        if prefix:
+            date_str = (now or datetime.now()).strftime("%Y-%m-%d")
+            return f"{prefix}_{_FILENAME_SUFFIX}_{date_str}.xlsx"
+    return default_output_filename(now)
 
 
 def resolve_unique_path(path: Path) -> Path:
@@ -80,20 +105,68 @@ class ProfessionalExcelWriter(DataSinkPort):
         self._totals_font = Font(name=config.font_family, size=config.body_font_size, bold=True)
 
     def write(self, parcels: Sequence[Parcel], output_path: Path) -> None:
-        """Write `parcels` to `output_path` as a formatted .xlsx file."""
-        workbook = Workbook()
-        worksheet = workbook.active
-        worksheet.title = _SHEET_TITLE
-        worksheet.sheet_view.rightToLeft = True
+        """Write `parcels` to `output_path` as a formatted .xlsx file.
 
+        Also writes one additional sheet per distinct اسم الحوض value,
+        each containing only that basin's rows in the same format as
+        the main sheet — per the user's request to be able to work
+        with each basin's data separately without re-sorting the main
+        sheet (which stays basin-block-ordered, as it already was).
+        """
+        workbook = Workbook()
+        main_worksheet = workbook.active
+        main_worksheet.title = _SHEET_TITLE
+        self._write_full_sheet(main_worksheet, parcels)
+
+        for basin_name, basin_parcels in self._group_by_basin(parcels).items():
+            sheet_title = self._unique_sheet_title(workbook, basin_name)
+            basin_worksheet = workbook.create_sheet(sheet_title)
+            self._write_full_sheet(basin_worksheet, basin_parcels)
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        workbook.save(output_path)
+
+    def _write_full_sheet(self, worksheet: Worksheet, parcels: Sequence[Parcel]) -> None:
+        worksheet.sheet_view.rightToLeft = True
         self._write_header(worksheet)
         last_row = self._write_data_rows(worksheet, parcels)
         self._write_totals_row(worksheet, last_row, parcels)
         self._autofit_columns(worksheet, parcels)
         worksheet.freeze_panes = "A2"
 
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        workbook.save(output_path)
+    def _group_by_basin(self, parcels: Sequence[Parcel]) -> dict[str, list[Parcel]]:
+        """Group `parcels` by اسم الحوض, preserving first-appearance order.
+
+        Parcels with no basin name are grouped under `_NO_BASIN_LABEL`
+        rather than dropped, so every row still appears in some basin
+        sheet.
+        """
+        groups: dict[str, list[Parcel]] = {}
+        for parcel in parcels:
+            key = parcel.basin.name or _NO_BASIN_LABEL
+            groups.setdefault(key, []).append(parcel)
+        return groups
+
+    def _unique_sheet_title(self, workbook: Workbook, basin_name: str) -> str:
+        """Sanitize `basin_name` into a valid, unique Excel sheet title.
+
+        Excel sheet names must be <=31 chars and may not contain
+        `: \\ / ? * [ ]`. Truncation could otherwise collide two
+        distinct long basin names into the same title, so a numeric
+        suffix is appended on collision.
+        """
+        sanitized = "".join(ch for ch in basin_name if ch not in "\\/*?:[]")
+        sanitized = sanitized.strip() or _NO_BASIN_LABEL
+        title = sanitized[:31]
+        existing = set(workbook.sheetnames)
+        if title not in existing:
+            return title
+        suffix = 2
+        while True:
+            candidate = f"{sanitized[: 31 - len(str(suffix)) - 1]}_{suffix}"
+            if candidate not in existing:
+                return candidate
+            suffix += 1
 
     def _write_header(self, worksheet: Worksheet) -> None:
         worksheet.row_dimensions[1].height = self._config.header_row_height

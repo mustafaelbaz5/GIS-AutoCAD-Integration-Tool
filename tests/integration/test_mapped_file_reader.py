@@ -16,7 +16,7 @@ from typing import Any
 import openpyxl
 import pytest
 from src.infrastructure.config.yaml_mapping_loader import load_mapping
-from src.infrastructure.excel.mapped_file_reader import MappedFileReader
+from src.infrastructure.excel.mapped_file_reader import MappedFileReader, read_first_field_value
 from src.infrastructure.excel.yaml_column_mapper import YamlColumnMapper
 from src.shared.arabic_normalizer import normalize_arabic
 
@@ -495,3 +495,88 @@ def test_raises_when_sheet_name_is_absent_and_workbook_has_multiple_sheets(
 
     with pytest.raises(KeyError, match="ExpectedSheetName"):
         MappedFileReader(path, mapper, config).read()
+
+
+# --- read_first_field_value --------------------------------------------------
+
+
+def test_read_first_field_value_returns_first_non_empty_value(tmp_path: Path) -> None:
+    path = tmp_path / "society.xlsx"
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Sheet1"
+    sheet.append(["ID", "Name", "Society"])
+    sheet.append(["1", "Someone", "ميت فضالة-الائتمان الزراعي"])
+    sheet.append(["2", "Someone Else", "ميت فضالة-الائتمان الزراعي"])
+    workbook.save(path)
+
+    config: dict[str, Any] = {
+        "sheet_name": "Sheet1",
+        "data_starts_at_row": 2,
+        "join_key_column": "A",
+        "fields": {"اسم_الحائز": "B", "الجمعيه": "C"},
+    }
+
+    value = read_first_field_value(path, config, "الجمعيه")
+
+    assert value == "ميت فضالة-الائتمان الزراعي"
+
+
+def test_read_first_field_value_skips_blank_rows(tmp_path: Path) -> None:
+    path = tmp_path / "society_blank_first.xlsx"
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Sheet1"
+    sheet.append(["ID", "Society"])
+    sheet.append(["1", None])
+    sheet.append(["2", "ميت فضالة-الائتمان الزراعي"])
+    workbook.save(path)
+
+    config: dict[str, Any] = {
+        "sheet_name": "Sheet1",
+        "data_starts_at_row": 2,
+        "join_key_column": "A",
+        "fields": {"الجمعيه": "B"},
+    }
+
+    value = read_first_field_value(path, config, "الجمعيه")
+
+    assert value == "ميت فضالة-الائتمان الزراعي"
+
+
+def test_read_first_field_value_returns_none_when_field_not_mapped(tmp_path: Path) -> None:
+    path = tmp_path / "no_society.xlsx"
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Sheet1"
+    sheet.append(["ID"])
+    sheet.append(["1"])
+    workbook.save(path)
+
+    config: dict[str, Any] = {
+        "sheet_name": "Sheet1",
+        "data_starts_at_row": 2,
+        "join_key_column": "A",
+        "fields": {},
+    }
+
+    assert read_first_field_value(path, config, "الجمعيه") is None
+
+
+def test_read_first_field_value_returns_none_when_all_scanned_rows_blank(tmp_path: Path) -> None:
+    path = tmp_path / "all_blank_society.xlsx"
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Sheet1"
+    sheet.append(["ID", "Society"])
+    sheet.append(["1", None])
+    workbook.save(path)
+
+    config: dict[str, Any] = {
+        "sheet_name": "Sheet1",
+        "data_starts_at_row": 2,
+        "join_key_column": "A",
+        "fields": {"الجمعيه": "B"},
+    }
+
+    assert read_first_field_value(path, config, "الجمعيه") is None

@@ -97,31 +97,10 @@ class MappedFileReader(DataSourcePort):
         return records
 
     def _resolve_worksheet(self, workbook: Any) -> Any:
-        self._sheet_fallback_warning = None
-        sheet_name = self._config.get("sheet_name")
-        if not sheet_name:
-            return workbook.active
-
-        if sheet_name in workbook.sheetnames:
-            return workbook[sheet_name]
-
-        # Report exports of the same file type sometimes get a slightly
-        # different auto-generated sheet name per export run. If this
-        # workbook has exactly one sheet, it's unambiguous which one was
-        # meant, so fall back to it rather than fail the whole run.
-        if len(workbook.sheetnames) == 1:
-            actual_name = workbook.sheetnames[0]
-            self._sheet_fallback_warning = (
-                f"Expected sheet '{sheet_name}' not found in '{self._path.name}'; "
-                f"used its only sheet '{actual_name}' instead."
-            )
-            return workbook[actual_name]
-
-        raise KeyError(
-            f"Worksheet '{sheet_name}' not found in '{self._path.name}', and the "
-            f"workbook has multiple sheets ({workbook.sheetnames}), so the correct "
-            f"one can't be inferred."
+        worksheet, self._sheet_fallback_warning = resolve_worksheet(
+            workbook, self._config.get("sheet_name"), self._path.name
         )
+        return worksheet
 
     def _is_excluded(self, raw_row: dict[str, Any], exclude_config: dict[str, Any] | None) -> bool:
         if not exclude_config:
@@ -132,3 +111,68 @@ class MappedFileReader(DataSourcePort):
         normalized_value = normalize_arabic(str(value))
         excluded_values = {normalize_arabic(v) for v in exclude_config["values"]}
         return normalized_value in excluded_values
+
+
+def resolve_worksheet(workbook: Any, sheet_name: str | None, source_filename: str) -> Any:
+    """Resolve `sheet_name` within `workbook`, with a single-sheet fallback.
+
+    Shared by `MappedFileReader` and `read_first_field_value` so both
+    apply the same "different export runs sometimes get a slightly
+    different auto-generated sheet name" tolerance (see
+    `MappedFileReader._resolve_worksheet`'s original docstring).
+
+    Returns:
+        A `(worksheet, fallback_warning)` tuple; `fallback_warning` is
+        None unless the fallback was used.
+    """
+    if not sheet_name:
+        return workbook.active, None
+
+    if sheet_name in workbook.sheetnames:
+        return workbook[sheet_name], None
+
+    if len(workbook.sheetnames) == 1:
+        actual_name = workbook.sheetnames[0]
+        warning = (
+            f"Expected sheet '{sheet_name}' not found in '{source_filename}'; "
+            f"used its only sheet '{actual_name}' instead."
+        )
+        return workbook[actual_name], warning
+
+    raise KeyError(
+        f"Worksheet '{sheet_name}' not found in '{source_filename}', and the "
+        f"workbook has multiple sheets ({workbook.sheetnames}), so the correct "
+        f"one can't be inferred."
+    )
+
+
+def read_first_field_value(
+    path: Path, config: dict[str, Any], field_name: str, max_rows_to_scan: int = 50
+) -> str | None:
+    """Peek the first non-empty value of one mapped field, without a full read.
+
+    Used where only a single representative value is needed (e.g. the
+    society name for the output filename) rather than a full
+    per-row `ParcelRecord` pass. Scans at most `max_rows_to_scan` data
+    rows in case the first few are blank.
+
+    Returns:
+        The cleaned text value, or None if `field_name` isn't declared
+        in `config["fields"]` or every scanned row is blank there.
+    """
+    column = config["fields"].get(field_name)
+    if not column:
+        return None
+
+    workbook = openpyxl.load_workbook(path, data_only=True, read_only=True)
+    worksheet, _ = resolve_worksheet(workbook, config.get("sheet_name"), path.name)
+
+    data_start = int(config["data_starts_at_row"])
+    col_index = column_index_from_string(column)
+    for row in worksheet.iter_rows(
+        min_row=data_start, max_row=data_start + max_rows_to_scan - 1, max_col=col_index
+    ):
+        value = clean_text(row[col_index - 1].value)
+        if value is not None:
+            return value
+    return None

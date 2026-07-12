@@ -35,10 +35,10 @@ from src.infrastructure.config.app_settings import (
 )
 from src.infrastructure.config.default_landmarks import DEFAULT_LANDMARK_KEYWORDS
 from src.infrastructure.config.yaml_mapping_loader import list_available_mappings, load_mapping
-from src.infrastructure.excel.mapped_file_reader import MappedFileReader
+from src.infrastructure.excel.mapped_file_reader import MappedFileReader, read_first_field_value
 from src.infrastructure.excel.professional_excel_writer import (
     ProfessionalExcelWriter,
-    default_output_filename,
+    build_output_filename,
     resolve_unique_path,
 )
 from src.infrastructure.excel.yaml_column_mapper import YamlColumnMapper
@@ -254,9 +254,12 @@ class MainApi:
             for warning in result.warnings:
                 self._push_event("onLogMessage", {"level": "WARNING", "message": warning})
 
+            society_name = read_first_field_value(primary_slot.file_path, primary_config, "الجمعيه")
+            filename = build_output_filename(society_name)
+
             self._output_dir.mkdir(parents=True, exist_ok=True)
             save_last_output_dir(self._output_dir)
-            output_path = resolve_unique_path(self._output_dir / default_output_filename())
+            output_path = resolve_unique_path(self._output_dir / filename)
             ExportFinalFileUseCase(ProfessionalExcelWriter()).execute(
                 result.parcels,
                 output_path,
