@@ -34,16 +34,20 @@ def make_parcel(
 
 
 def test_sorts_five_parcel_basin_with_horizontal_and_vertical_chains() -> None:
-    p1 = make_parcel("1", "H1", east="مصرف صرف", west="H2", north="H3")
-    p2 = make_parcel("2", "H2", west="مصرف")
-    p3 = make_parcel("3", "H3", west="H4")
-    p4 = make_parcel("4", "H4", west="مروى رى")
+    # Row 1 (East->West): 1 <- 2, vertical drop via 2's south (القبلي) to 3.
+    # Row 2 (West->East, direction flipped): 3 -> 4, no vertical match from
+    # 4 so the chain resumes arbitrarily with the one remaining parcel, 5.
+    p1 = make_parcel("1", "H1", east="مصرف صرف", west="H2")
+    p2 = make_parcel("2", "H2", west="مصرف", south="H3")
+    p3 = make_parcel("3", "H3", east="H4")
+    p4 = make_parcel("4", "H4", east="مروى رى")
     p5 = make_parcel("5", "H5", west="غير موجود")
 
-    result = SpatialSorter(LANDMARKS).sort([p4, p2, p5, p1, p3])
+    result = SpatialSorter(LANDMARKS).sort([p1, p4, p2, p5, p3])
 
     assert [str(p.holding_id) for p in result.parcels] == ["1", "2", "3", "4", "5"]
-    assert any("could not be placed" in w for w in result.warnings)
+    assert any("resumed from an arbitrary remaining parcel" in w for w in result.warnings)
+    assert result.unplaced_count == 1
 
 
 def test_never_drops_a_parcel_even_when_unplaceable() -> None:
@@ -91,6 +95,55 @@ def test_basins_are_sorted_independently() -> None:
 
     holding_ids = {str(p.holding_id) for p in result.parcels}
     assert holding_ids == {"a1", "b1"}
+
+
+def test_boustrophedon_six_parcel_diagram_matches_brief_section_3_1() -> None:
+    # Row 1 (East->West): 1 <- 2 <- 3, then drop via 3's south (القبلي) to 4.
+    # Row 2 (West->East, direction flipped): 4 -> 5 -> 6.
+    p1 = make_parcel("1", "H1", east="مصرف صرف", west="H2")
+    p2 = make_parcel("2", "H2", west="H3")
+    p3 = make_parcel("3", "H3", west="مصرف", south="H4")
+    p4 = make_parcel("4", "H4", east="H5")
+    p5 = make_parcel("5", "H5", east="H6")
+    p6 = make_parcel("6", "H6", east="مصرف")
+
+    result = SpatialSorter(LANDMARKS).sort([p1, p3, p6, p4, p2, p5])
+
+    assert [str(p.holding_id) for p in result.parcels] == ["1", "2", "3", "4", "5", "6"]
+    assert result.unplaced_count == 0
+
+
+def test_vertical_lookup_falls_back_to_north_when_south_has_no_match() -> None:
+    # Single-parcel row 1 ends immediately (both borders are landmarks);
+    # its south text matches nobody, so the algorithm must fall back to
+    # its north text, which does match — not to the arbitrary-resume path.
+    p_a = make_parcel("A", "HA", east="مصرف صرف", west="مصرف", south="غير موجود ابدا", north="HB")
+    p_b = make_parcel("B", "HB", east="مصرف")
+
+    result = SpatialSorter(LANDMARKS).sort([p_a, p_b])
+
+    assert [str(p.holding_id) for p in result.parcels] == ["A", "B"]
+    assert result.unplaced_count == 0
+    assert not any("resumed from an arbitrary remaining parcel" in w for w in result.warnings)
+
+
+def test_direction_alternates_across_three_or_more_rows() -> None:
+    # Row 1 (East->West): 1 <- 2.       Row 2 (West->East): 3 -> 4.
+    # Row 3 (East->West again): 5 <- 6. Each row's horizontal chain only
+    # succeeds if the direction used to read borders is the expected one
+    # for that row, so a wrong (non-alternating) direction would leave
+    # rows 2/3 unable to extend past their first parcel.
+    p1 = make_parcel("1", "H1", east="مصرف صرف", west="H2")
+    p2 = make_parcel("2", "H2", west="مصرف", south="H3")
+    p3 = make_parcel("3", "H3", east="H4")
+    p4 = make_parcel("4", "H4", east="مروى رى", south="H5")
+    p5 = make_parcel("5", "H5", west="H6")
+    p6 = make_parcel("6", "H6", west="ترعة رى")
+
+    result = SpatialSorter(LANDMARKS).sort([p1, p4, p6, p3, p5, p2])
+
+    assert [str(p.holding_id) for p in result.parcels] == ["1", "2", "3", "4", "5", "6"]
+    assert result.unplaced_count == 0
 
 
 def test_landmark_matching_is_normalized() -> None:
