@@ -383,6 +383,12 @@ function applySelectedFile(slot, fileInfo) {
 let lastDragOverSlot = null;
 
 function wireDropZones() {
+  // A zone from a previous screen (e.g. results, which has no drop
+  // zones at all) must not leave a stale slot pointing at a now-
+  // destroyed element once we re-render into a screen that does have
+  // drop zones again.
+  lastDragOverSlot = null;
+
   document.querySelectorAll('[data-select-file]').forEach((button) => {
     button.addEventListener('click', () => onSelectFile(button.dataset.selectFile));
   });
@@ -401,6 +407,7 @@ function wireDropZones() {
 async function onNativeFileDropped(path) {
   const slot = lastDragOverSlot;
   if (!slot) {
+    appendLog(`تعذر تحديد منطقة الإفلات المستهدفة للملف: ${path}`);
     return;
   }
   const result = await Bridge.call('handle_dropped_file', slot, path);

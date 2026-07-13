@@ -55,6 +55,7 @@ def _setup_drag_drop(window: webview.Window) -> None:
 
     def on_drop(e: dict[str, Any]) -> None:
         files = e.get("dataTransfer", {}).get("files", [])
+        logger.info(f"Native drop event received, {len(files)} file(s)")
         if not files:
             return
         full_path = files[0].get("pywebviewFullPath")
