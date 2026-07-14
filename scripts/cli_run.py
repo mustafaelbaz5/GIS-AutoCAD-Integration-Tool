@@ -4,7 +4,7 @@ Usage:
     python scripts/cli_run.py <base_file> <secondary_file> [output_path]
         [--base-mapping PATH] [--secondary-mapping PATH] [--no-sort]
 
-Proves the full pipeline (read -> merge -> spatial sort -> write) works
+Proves the full pipeline (read -> merge -> sort -> write) works
 end-to-end before the GUI is wired up, per project brief Phase 5.
 """
 
@@ -16,8 +16,7 @@ from pathlib import Path
 from loguru import logger
 from src.application.use_cases.export_final_file_use_case import ExportFinalFileUseCase
 from src.application.use_cases.merge_parcels_use_case import MergeParcelsUseCase
-from src.domain.services.spatial_sorter import SpatialSorter
-from src.infrastructure.config.default_landmarks import DEFAULT_LANDMARK_KEYWORDS
+from src.domain.services.basin_sorter import BasinSorter
 from src.infrastructure.config.yaml_mapping_loader import load_mapping
 from src.infrastructure.excel.mapped_file_reader import MappedFileReader
 from src.infrastructure.excel.professional_excel_writer import (
@@ -67,11 +66,11 @@ def run_pipeline(args: argparse.Namespace) -> Path:
     supplementary_reader = MappedFileReader(
         args.secondary_file, supplementary_mapper, supplementary_config
     )
-    sorter = None if args.no_sort else SpatialSorter(DEFAULT_LANDMARK_KEYWORDS)
+    sorter = None if args.no_sort else BasinSorter()
 
     logger.info("Reading and merging sources...")
     result = MergeParcelsUseCase(
-        primary_reader, supplementary_reader, spatial_sorter=sorter
+        primary_reader, supplementary_reader, basin_sorter=sorter
     ).execute()
     logger.info(f"Merged {len(result.parcels)} parcels ({len(result.warnings)} warnings).")
     for warning in result.warnings:

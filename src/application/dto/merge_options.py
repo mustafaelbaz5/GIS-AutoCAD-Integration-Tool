@@ -21,6 +21,6 @@ class MergeOptions:
     normally drop (e.g. القاصر == "لاغى") are kept instead."""
 
     enable_spatial_sort: bool = True
-    """When True, `MergeParcelsUseCase` is given a `SpatialSorter` so
-    output rows are ordered by basin/spatial adjacency rather than
-    source-file order."""
+    """When True, `MergeParcelsUseCase` is given a `BasinSorter` so
+    output rows are ordered alphabetically (A→Z) by holder name
+    (اسم الحائز) within each basin, rather than source-file order."""

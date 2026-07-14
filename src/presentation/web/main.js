@@ -176,7 +176,7 @@ function advancedSettingsPanel() {
         <input type="checkbox" data-action="include-laghi" ${State.mergeOptions.includeLaghiRows ? 'checked' : ''}/>
       </label>
       <label class="flex items-center justify-between gap-md">
-        <span class="text-on-surface-variant">تفعيل الترتيب المكاني</span>
+        <span class="text-on-surface-variant">ترتيب القطع أبجديًا حسب اسم الحائز</span>
         <input type="checkbox" data-action="enable-spatial-sort" ${State.mergeOptions.enableSpatialSort ? 'checked' : ''}/>
       </label>
     </div>`;
@@ -261,7 +261,6 @@ function mainContentResults() {
       ${statCard('صفوف «لاغى» مستبعدة', stats.excluded_laghi_count, 'text-on-surface-variant')}
       ${statCard('إجمالي المساحة', stats.total_feddan.toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' فدان')}
       ${statCard('عدد الأحواض', stats.distinct_basin_count)}
-      ${statCard('قطع لم يُحدَّد ترتيبها', stats.unplaced_count, 'text-tertiary')}
       ${statCard('زمن المعالجة', stats.elapsed_seconds.toFixed(1) + ' ثانية', 'text-primary')}
       <div class="col-span-2 md:col-span-5 bg-surface-container-low border border-outline-variant/30 p-md rounded-lg flex flex-row-reverse justify-between items-center">
         <span class="text-on-surface-variant text-label-sm">أكبر 3 أحواض:</span>

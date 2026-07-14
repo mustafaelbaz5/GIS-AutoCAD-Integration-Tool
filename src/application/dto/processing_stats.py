@@ -26,8 +26,6 @@ class ProcessingStats:
         total_sqm: Sum of the computed total-area (م²) column.
         distinct_basin_count: Distinct basin names.
         top_basins: Up to 3 (basin name, parcel count) pairs, largest first.
-        unplaced_count: Parcels the spatial sorter could not place in
-            sequence and appended at the end of their basin block.
         elapsed_seconds: Wall-clock time the merge took.
     """
 
@@ -45,5 +43,4 @@ class ProcessingStats:
     total_sqm: float
     distinct_basin_count: int
     top_basins: list[tuple[str, int]]
-    unplaced_count: int
     elapsed_seconds: float

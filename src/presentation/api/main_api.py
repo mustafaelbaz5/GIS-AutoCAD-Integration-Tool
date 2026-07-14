@@ -26,14 +26,13 @@ from src.application.dto.slot_assignment import SlotAssignment
 from src.application.exceptions import PipelineCancelledError
 from src.application.use_cases.export_final_file_use_case import ExportFinalFileUseCase
 from src.application.use_cases.merge_parcels_use_case import MergeParcelsUseCase
-from src.domain.services.spatial_sorter import SpatialSorter
+from src.domain.services.basin_sorter import BasinSorter
 from src.domain.value_objects.slot_role import SlotRole
 from src.infrastructure.config.app_settings import (
     DEFAULT_OUTPUT_DIR,
     load_last_output_dir,
     save_last_output_dir,
 )
-from src.infrastructure.config.default_landmarks import DEFAULT_LANDMARK_KEYWORDS
 from src.infrastructure.config.yaml_mapping_loader import list_available_mappings, load_mapping
 from src.infrastructure.excel.mapped_file_reader import MappedFileReader, read_first_field_value
 from src.infrastructure.excel.professional_excel_writer import (
@@ -244,9 +243,7 @@ class MainApi:
                 supplementary_config,
                 apply_exclusion=not options.include_laghi_rows,
             )
-            sorter = (
-                SpatialSorter(DEFAULT_LANDMARK_KEYWORDS) if options.enable_spatial_sort else None
-            )
+            sorter = BasinSorter() if options.enable_spatial_sort else None
 
             result = MergeParcelsUseCase(primary_reader, supplementary_reader, sorter).execute(
                 on_progress=self._on_merge_progress, is_cancelled=lambda: self._cancel_requested

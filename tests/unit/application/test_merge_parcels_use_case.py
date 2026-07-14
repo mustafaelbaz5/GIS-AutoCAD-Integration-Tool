@@ -5,7 +5,7 @@ from src.application.dto.parcel_record import ParcelRecord
 from src.application.exceptions import PipelineCancelledError
 from src.application.ports.data_source_port import DataSourcePort
 from src.application.use_cases.merge_parcels_use_case import MergeParcelsUseCase
-from src.domain.services.spatial_sorter import SpatialSorter
+from src.domain.services.basin_sorter import BasinSorter
 
 
 class FakeDataSource(DataSourcePort):
@@ -161,25 +161,19 @@ def test_base_row_without_holding_id_is_skipped_with_warning() -> None:
     assert any("Skipped" in w for w in result.warnings)
 
 
-def test_spatial_sorter_is_applied_when_provided() -> None:
+def test_basin_sorter_is_applied_when_provided() -> None:
     base = FakeDataSource(
         [
-            make_record(
-                holding_id_raw="1",
-                holder_name="H1",
-                basin_name="basin",
-                east="مصرف صرف",
-                west="H2",
-            ),
-            make_record(holding_id_raw="2", holder_name="H2", basin_name="basin", west="مصرف"),
+            make_record(holding_id_raw="1", holder_name="زكريا", basin_name="basin"),
+            make_record(holding_id_raw="2", holder_name="أحمد", basin_name="basin"),
         ]
     )
     secondary = FakeDataSource([])
-    sorter = SpatialSorter(landmark_keywords=["مصرف صرف", "مصرف"])
+    sorter = BasinSorter()
 
-    result = MergeParcelsUseCase(base, secondary, spatial_sorter=sorter).execute()
+    result = MergeParcelsUseCase(base, secondary, basin_sorter=sorter).execute()
 
-    assert [str(p.holding_id) for p in result.parcels] == ["1", "2"]
+    assert [str(p.holding_id) for p in result.parcels] == ["2", "1"]
 
 
 def test_reports_progress_from_zero_to_hundred() -> None:

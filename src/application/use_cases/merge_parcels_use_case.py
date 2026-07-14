@@ -13,7 +13,7 @@ from src.domain.entities.basin import Basin
 from src.domain.entities.borders import Borders
 from src.domain.entities.holder import Holder
 from src.domain.entities.parcel import Parcel
-from src.domain.services.spatial_sorter import SpatialSorter
+from src.domain.services.basin_sorter import BasinSorter
 from src.domain.value_objects.area import Area
 from src.domain.value_objects.holding_id import HoldingId, normalize_for_join
 
@@ -39,11 +39,11 @@ class MergeParcelsUseCase:
         self,
         primary_source: DataSourcePort,
         supplementary_source: DataSourcePort,
-        spatial_sorter: SpatialSorter | None = None,
+        basin_sorter: BasinSorter | None = None,
     ) -> None:
         self._primary_source = primary_source
         self._supplementary_source = supplementary_source
-        self._spatial_sorter = spatial_sorter
+        self._basin_sorter = basin_sorter
 
     def execute(
         self,
@@ -108,20 +108,15 @@ class MergeParcelsUseCase:
                 report(45 + int(40 * index / total), f"Merging record {index}/{total}")
                 check_cancelled()
 
-        unplaced_count = 0
-        if self._spatial_sorter is not None:
+        if self._basin_sorter is not None:
             check_cancelled()
-            report(90, "Sorting parcels spatially...")
-            sort_result = self._spatial_sorter.sort(parcels)
-            parcels = sort_result.parcels
-            warnings.extend(sort_result.warnings)
-            unplaced_count = sort_result.unplaced_count
+            report(90, "Sorting parcels by holder name within each basin...")
+            parcels = self._basin_sorter.sort(parcels).parcels
 
         stats = ComputeStatsUseCase().execute(
             parcels=parcels,
             primary_only_count=primary_only_count,
             excluded_laghi_count=self._supplementary_source.excluded_count,
-            unplaced_count=unplaced_count,
             elapsed_seconds=time.time() - start_time,
         )
 

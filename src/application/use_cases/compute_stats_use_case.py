@@ -40,7 +40,6 @@ class ComputeStatsUseCase:
         parcels: Sequence[Parcel],
         primary_only_count: int,
         excluded_laghi_count: int,
-        unplaced_count: int,
         elapsed_seconds: float,
     ) -> ProcessingStats:
         """Compute aggregate statistics for a completed merge run."""
@@ -91,7 +90,6 @@ class ComputeStatsUseCase:
             total_sqm=round(total_sqm, 2),
             distinct_basin_count=len(basin_counts),
             top_basins=list(basin_counts.most_common(3)),
-            unplaced_count=unplaced_count,
             elapsed_seconds=round(elapsed_seconds, 2),
         )
 
